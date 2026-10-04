@@ -1,0 +1,3 @@
+# Daily backups use spatie/laravel-backup, stored on local disk for now
+
+Registration data cannot be re-typed if lost, so we back up the database daily. We chose `spatie/laravel-backup` over a hand-rolled `mysqldump` script because it also prunes old backups and can check backup health, both of which we'd otherwise have to write ourselves. Backups are stored on the VPS's own disk only, not offsite, because setting up offsite (S3-compatible) storage needs a bucket and credentials that couldn't be arranged before the 2026-09-30 deadline. This means a lost or corrupted VPS would take its backups down with it; add an offsite disk in `config/backup.php` once that risk needs closing, which is a config change, not a rewrite.

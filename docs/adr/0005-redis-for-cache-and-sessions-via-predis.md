@@ -1,0 +1,5 @@
+# Redis for cache and sessions, using predis instead of the phpredis extension
+
+Sessions and the cache (the portal's leaderboards) moved from MySQL to Redis for speed, on the same single VPS — no load balancer or second server, since the actual scale here (a few thousand registrants, not sustained heavy concurrent traffic) doesn't call for horizontal scaling. We use `predis/predis`, a pure-PHP Redis client, instead of the compiled `phpredis` PHP extension, because we can't guarantee that extension is installed on the deployment target, and predis works anywhere Composer works with no server-level dependency. This costs some raw throughput compared to `phpredis`; if that ever matters at this project's scale, switching is a one-line `REDIS_CLIENT` change, not a rewrite.
+
+The queue connection was deliberately left on `database`, not moved to Redis: nothing in the app dispatches a queued job, and no queue worker runs (see the deployment checklist), so a Redis-backed queue would just accumulate unprocessed work with nothing to show for the switch.
