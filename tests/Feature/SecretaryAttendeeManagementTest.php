@@ -57,6 +57,18 @@ class SecretaryAttendeeManagementTest extends TestCase
             ->assertSee('On Site');
     }
 
+    public function test_the_on_site_form_keeps_the_chosen_circuit_and_church_after_a_validation_error(): void
+    {
+        $this->actingAs($this->secretary)
+            ->from('/attendees')
+            ->post('/attendees', $this->onSiteForm(['first_name' => '']))
+            ->assertSessionHasErrors('first_name');
+
+        $this->get('/attendees')
+            ->assertSee('<option value="'.$this->grace->circuit_id.'" selected>Digos City</option>', false)
+            ->assertSee('<option value="'.$this->grace->id.'" selected>Grace Church</option>', false);
+    }
+
     private function registeredJuan(): Attendee
     {
         return Attendee::factory()->create([

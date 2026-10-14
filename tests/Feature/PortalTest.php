@@ -144,6 +144,56 @@ class PortalTest extends TestCase
                 ->all() === [['Digos City', 50], ['Davao City', 20], ['Cebu City', 0]]);
     }
 
+    public function test_the_home_page_counts_down_the_days_until_the_camp_starts(): void
+    {
+        $this->travelTo('2026-12-20 15:00:00');
+        YouthCamp::factory()->create(['starts_on' => '2026-12-27', 'ends_on' => '2026-12-29', 'is_current' => true]);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSeeInOrder(['data-countdown-days>7<', 'days to go'], false)
+            ->assertDontSee('Happening now');
+    }
+
+    public function test_the_home_page_says_the_camp_is_happening_now_from_its_first_to_its_last_day(): void
+    {
+        YouthCamp::factory()->create(['starts_on' => '2026-12-27', 'ends_on' => '2026-12-29', 'is_current' => true]);
+
+        foreach (['2026-12-27 00:00:00', '2026-12-29 23:59:00'] as $moment) {
+            $this->travelTo($moment);
+
+            $this->get('/')
+                ->assertSee('Happening now')
+                ->assertDontSee('days to go');
+        }
+    }
+
+    public function test_the_home_page_says_the_camp_has_ended_after_its_last_day(): void
+    {
+        $this->travelTo('2026-12-30 00:00:00');
+        YouthCamp::factory()->create(['starts_on' => '2026-12-27', 'ends_on' => '2026-12-29', 'is_current' => true]);
+
+        $this->get('/')
+            ->assertSee('This camp has ended')
+            ->assertDontSee('Happening now')
+            ->assertDontSee('days to go');
+    }
+
+    public function test_the_home_page_shows_the_2026_poster_and_speaker_only_for_the_2026_camp(): void
+    {
+        $camp = YouthCamp::factory()->create(['year' => 2026, 'is_current' => true]);
+
+        $this->get('/')
+            ->assertSee('Camp at a glance')
+            ->assertSee('Rev. Jade T. Diaz');
+
+        $camp->update(['year' => 2027]);
+
+        $this->get('/')
+            ->assertDontSee('Camp at a glance')
+            ->assertDontSee('Rev. Jade T. Diaz');
+    }
+
     public function test_the_home_page_has_a_footer_naming_the_district(): void
     {
         $this->get('/')->assertSee('South Mindanao District, CAMACOP');

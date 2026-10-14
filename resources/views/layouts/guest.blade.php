@@ -19,30 +19,65 @@
     <script src="{{ asset('sneat/js/config.js') }}"></script>
 </head>
 <body class="duyog-sky duyog-auth-page">
+<a class="duyog-skip-link" href="#main">Skip to sign-in form</a>
 <div class="container-xxl duyog-auth-shell">
-    <div>
+    <div class="duyog-auth-brand">
         <p class="duyog-eyebrow mb-3">South Mindanao District Youth Camp</p>
         <div class="duyog-wordmark mb-3">DUYOG '26</div>
-        <h1 class="duyog-heading mb-3">ROOTED</h1>
+        <p class="duyog-heading duyog-auth-title mb-3">ROOTED</p>
         <p class="duyog-hero-tagline">Growing deeper. Reaching higher.<br>Living for Christ.</p>
-        <p class="duyog-verse mt-4">Colossians 2:6–7</p>
+        <p class="duyog-lp-verse mt-3"><i class="bx bx-book-open" aria-hidden="true"></i> Colossians 2:6&#8211;7</p>
     </div>
-    <div class="card duyog-card duyog-auth-card">
+    <main id="main" class="card duyog-card duyog-auth-card">
         <div class="card-body">
-            <div class="d-flex align-items-center gap-3 mb-4">
-                <img src="{{ asset('images/duyog-emblem.jpg') }}" alt="" width="44" height="44" class="rounded-circle" style="object-fit: cover; object-position: center 44%;">
-                <div><div class="duyog-wordmark" style="font-size: .9rem;">DUYOG '26</div><small class="text-muted">Staff workspace</small></div>
+            <div class="duyog-auth-card-brand">
+                <img src="{{ asset('images/duyog-emblem.webp') }}" alt="" width="48" height="48" class="rounded-circle" style="object-fit: cover; object-position: center 44%;">
+                <div><div class="duyog-wordmark">DUYOG '26</div><small>Staff workspace</small></div>
             </div>
             @include('partials.alerts')
             @yield('content')
-            <a href="/" class="small text-decoration-none d-inline-flex align-items-center mt-3"><i class="bx bx-left-arrow-alt me-1"></i> Back to camp portal</a>
+            <a href="/" class="duyog-auth-back"><i class="bx bx-left-arrow-alt" aria-hidden="true"></i> Back to camp portal</a>
         </div>
-    </div>
+    </main>
 </div>
 <script src="{{ asset('sneat/vendor/libs/jquery/jquery.js') }}"></script>
 <script src="{{ asset('sneat/vendor/libs/popper/popper.js') }}"></script>
 <script src="{{ asset('sneat/vendor/js/bootstrap.js') }}"></script>
 <script src="{{ asset('sneat/vendor/js/menu.js') }}"></script>
 <script src="{{ asset('sneat/js/main.js') }}"></script>
+<script>
+    (() => {
+        document.querySelectorAll('[data-password-toggle]').forEach((toggle) => {
+            const input = document.getElementById(toggle.dataset.passwordToggle);
+
+            toggle.addEventListener('click', () => {
+                const reveal = input.type === 'password';
+
+                input.type = reveal ? 'text' : 'password';
+                toggle.setAttribute('aria-pressed', String(reveal));
+                toggle.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+                toggle.querySelector('i').className = reveal ? 'bx bx-hide' : 'bx bx-show';
+            });
+        });
+
+        document.querySelectorAll('[data-caps-hint]').forEach((hint) => {
+            const input = document.getElementById(hint.dataset.capsHint);
+            const update = (event) => { hint.hidden = !(event.getModifierState && event.getModifierState('CapsLock')); };
+
+            input.addEventListener('keyup', update);
+            input.addEventListener('keydown', update);
+            input.addEventListener('blur', () => { hint.hidden = true; });
+        });
+
+        document.querySelectorAll('form[data-busy-label]').forEach((form) => {
+            form.addEventListener('submit', () => {
+                const button = form.querySelector('button[type="submit"]');
+
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> ' + form.dataset.busyLabel;
+            });
+        });
+    })();
+</script>
 </body>
 </html>

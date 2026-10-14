@@ -3,96 +3,164 @@
 @section('title', 'Dashboard')
 
 @section('content')
-    <div class="duyog-card p-4 p-lg-5 mb-4">
-        <p class="duyog-eyebrow mb-2">DUYOG '26 · ROOTED</p>
-        <h1 class="duyog-heading mb-3" style="font-size: clamp(2.2rem, 5vw, 4rem);">Welcome, {{ auth()->user()->name }}</h1>
-        <p class="mb-0">Signed in as {{ str(auth()->user()->role->value)->replace('_', ' ')->title() }}@if (auth()->user()->circuit) for {{ auth()->user()->circuit->name }}@endif.</p>
-    </div>
+    @use('App\Enums\Role')
+
+    @php
+        $user = auth()->user();
+        $role = $user->role;
+        $percent = fn (int $part, int $whole): int => $whole > 0 ? (int) round($part / $whole * 100) : 0;
+
+        $shortcuts = collect([
+            ['roles' => [Role::CircuitPresident, Role::Secretary, Role::Admin], 'href' => '/attendees', 'icon' => 'bx-group', 'title' => 'Attendee roster', 'text' => 'Review, update, and manage camp registrations.'],
+            ['roles' => [Role::Secretary, Role::Admin], 'href' => '/camp-ids', 'icon' => 'bx-id-card', 'title' => 'Camp IDs', 'text' => 'Prepare and print attendee identification cards.'],
+            ['roles' => [Role::Security, Role::Admin], 'href' => '/gate', 'icon' => 'bx-scan', 'title' => 'Gate scanner', 'text' => 'Check attendees in and out at camp.'],
+            ['roles' => [Role::Secretary, Role::Admin], 'href' => '/gate/review', 'icon' => 'bx-flag', 'title' => 'Gate scan review', 'text' => 'Review flagged check-in and check-out scans.'],
+            ['roles' => [Role::Tabulator, Role::Admin], 'href' => '/events', 'icon' => 'bx-trophy', 'title' => 'Events & scores', 'text' => 'Record event scores and follow circuit standings.'],
+            ['roles' => [Role::Admin], 'href' => '/admin/youth-camps', 'icon' => 'bx-cog', 'title' => 'Camp administration', 'text' => 'Manage camp details, staff, circuits, and churches.'],
+        ])->filter(fn (array $shortcut) => in_array($role, $shortcut['roles'], true));
+    @endphp
+
+    <header class="duyog-dash-welcome">
+        <div>
+            <p class="duyog-eyebrow mb-2">DUYOG '26 · ROOTED</p>
+            <h1>Welcome, {{ $user->name }}</h1>
+            <p class="duyog-dash-chips">
+                <span class="duyog-dash-chip"><i class="bx bx-shield-quarter" aria-hidden="true"></i> {{ str($role->value)->replace('_', ' ')->title() }}</span>
+                @if ($user->circuit)
+                    <span class="duyog-dash-chip"><i class="bx bx-map-pin" aria-hidden="true"></i> {{ $user->circuit->name }}</span>
+                @endif
+            </p>
+        </div>
+        <img src="{{ asset('images/duyog-emblem.webp') }}" alt="" width="88" height="88" class="duyog-dash-emblem">
+    </header>
 
     @if (isset($overview))
-        <div class="row g-4 mb-4">
-            <div class="col-6 col-lg-3">
-                <div class="duyog-card h-100 p-4 text-center">
-                    <p class="duyog-eyebrow mb-1">Registered</p>
-                    <p class="duyog-heading mb-0" style="font-size: 2.5rem;">{{ $overview['total'] }}</p>
-                    <p class="mb-0 small">{{ $overview['youth'] }} youth &middot; {{ $overview['pastors'] }} pastors</p>
-                </div>
+        @php
+            $idsPrinted = isset($perCircuit) ? $perCircuit->sum('printed') : null;
+            $idsPending = isset($perCircuit) ? $perCircuit->sum('pending') : null;
+        @endphp
+
+        <section class="mb-4" aria-labelledby="overview-title">
+            <div class="duyog-dash-section-heading">
+                <h2 id="overview-title">{{ isset($perCircuit) ? 'District registration' : 'Your circuit\'s registration' }}</h2>
+                <span>Current camp</span>
             </div>
-            <div class="col-6 col-lg-3">
-                <div class="duyog-card h-100 p-4 text-center">
-                    <p class="duyog-eyebrow mb-1">Pre-Registration</p>
-                    <p class="duyog-heading mb-0" style="font-size: 2.5rem;">{{ $overview['preRegistration'] }}</p>
-                    <p class="mb-0 small">vs {{ $overview['onSite'] }} on-site</p>
-                </div>
+
+            @if ($overview['total'] === 0)
+                <p class="duyog-dash-empty"><i class="bx bx-info-circle" aria-hidden="true"></i> No one is registered for the current camp yet. Totals appear here as rosters are uploaded.</p>
+            @endif
+
+            <div class="duyog-dash-stats">
+                <article class="duyog-dash-stat is-primary">
+                    <div class="duyog-dash-stat-head"><span class="duyog-dash-stat-icon"><i class="bx bx-group" aria-hidden="true"></i></span><h3>Registered</h3></div>
+                    <p class="duyog-dash-stat-value">{{ number_format($overview['total']) }}</p>
+                    <div class="duyog-dash-bar" role="img" aria-label="{{ $overview['youth'] }} youth and {{ $overview['pastors'] }} pastors"><span style="width: {{ $percent($overview['youth'], $overview['total']) }}%"></span></div>
+                    <p class="duyog-dash-stat-note">{{ number_format($overview['youth']) }} youth &middot; {{ number_format($overview['pastors']) }} {{ Str::plural('pastor', $overview['pastors']) }}</p>
+                </article>
+                <article class="duyog-dash-stat">
+                    <div class="duyog-dash-stat-head"><span class="duyog-dash-stat-icon"><i class="bx bx-calendar-check" aria-hidden="true"></i></span><h3>Pre-registration</h3></div>
+                    <p class="duyog-dash-stat-value">{{ number_format($overview['preRegistration']) }} <small>{{ $percent($overview['preRegistration'], $overview['total']) }}%</small></p>
+                    <div class="duyog-dash-bar" role="img" aria-label="{{ $overview['preRegistration'] }} pre-registered and {{ $overview['onSite'] }} on-site"><span style="width: {{ $percent($overview['preRegistration'], $overview['total']) }}%"></span></div>
+                    <p class="duyog-dash-stat-note">vs {{ number_format($overview['onSite']) }} on-site</p>
+                </article>
+                <article class="duyog-dash-stat">
+                    <div class="duyog-dash-stat-head"><span class="duyog-dash-stat-icon"><i class="bx bx-water" aria-hidden="true"></i></span><h3>Baptized</h3></div>
+                    <p class="duyog-dash-stat-value">{{ number_format($overview['baptized']) }} <small>{{ $percent($overview['baptized'], $overview['total']) }}%</small></p>
+                    <div class="duyog-dash-bar" role="img" aria-label="{{ $overview['baptized'] }} baptized and {{ $overview['notBaptized'] }} not yet baptized"><span style="width: {{ $percent($overview['baptized'], $overview['total']) }}%"></span></div>
+                    <p class="duyog-dash-stat-note">{{ number_format($overview['notBaptized']) }} not yet baptized</p>
+                </article>
+                @if ($idsPrinted !== null)
+                    <article class="duyog-dash-stat">
+                        <div class="duyog-dash-stat-head"><span class="duyog-dash-stat-icon"><i class="bx bx-id-card" aria-hidden="true"></i></span><h3>Camp IDs printed</h3></div>
+                        <p class="duyog-dash-stat-value">{{ number_format($idsPrinted) }} <small>{{ $percent($idsPrinted, $idsPrinted + $idsPending) }}%</small></p>
+                        <div class="duyog-dash-bar" role="img" aria-label="{{ $idsPrinted }} Camp IDs printed and {{ $idsPending }} pending"><span style="width: {{ $percent($idsPrinted, $idsPrinted + $idsPending) }}%"></span></div>
+                        <p class="duyog-dash-stat-note">{{ number_format($idsPending) }} still to print</p>
+                    </article>
+                @else
+                    <article class="duyog-dash-stat">
+                        <div class="duyog-dash-stat-head"><span class="duyog-dash-stat-icon"><i class="bx bx-walk" aria-hidden="true"></i></span><h3>On-site</h3></div>
+                        <p class="duyog-dash-stat-value">{{ number_format($overview['onSite']) }} <small>{{ $percent($overview['onSite'], $overview['total']) }}%</small></p>
+                        <div class="duyog-dash-bar" role="img" aria-label="{{ $overview['onSite'] }} of {{ $overview['total'] }} registered on-site"><span style="width: {{ $percent($overview['onSite'], $overview['total']) }}%"></span></div>
+                        <p class="duyog-dash-stat-note">walk-in registrations</p>
+                    </article>
+                @endif
             </div>
-            <div class="col-6 col-lg-3">
-                <div class="duyog-card h-100 p-4 text-center">
-                    <p class="duyog-eyebrow mb-1">Baptized</p>
-                    <p class="duyog-heading mb-0" style="font-size: 2.5rem;">{{ $overview['baptized'] }}</p>
-                    <p class="mb-0 small">{{ $overview['notBaptized'] }} not yet baptized</p>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="duyog-card h-100 p-4 text-center">
-                    <p class="duyog-eyebrow mb-1">On-Site</p>
-                    <p class="duyog-heading mb-0" style="font-size: 2.5rem;">{{ $overview['onSite'] }}</p>
-                    <p class="mb-0 small">walk-in registrations</p>
-                </div>
-            </div>
-        </div>
+        </section>
     @endif
 
     @if (isset($perCircuit))
-        <div class="duyog-card p-4 mb-4">
-            <h2 class="h5 mb-3">Registration by Circuit</h2>
+        @php($largestCircuit = max(1, (int) $perCircuit->max('total')))
+
+        <section class="duyog-card duyog-dash-panel mb-4" aria-labelledby="per-circuit-title">
+            <div class="duyog-dash-panel-head">
+                <h2 id="per-circuit-title">Registration by Circuit</h2>
+                <span>{{ $perCircuit->count() }} {{ $perCircuit->count() === 1 ? 'circuit' : 'circuits' }}</span>
+            </div>
             <div class="table-responsive">
-                <table class="table duyog-table mb-0">
+                <table class="table duyog-table duyog-dash-table mb-0">
                     <thead>
                         <tr>
-                            <th>Circuit</th>
-                            <th class="text-end">Registered</th>
-                            <th class="text-end">Pre-Reg</th>
-                            <th class="text-end">On-Site</th>
-                            <th class="text-end">IDs Printed</th>
-                            <th class="text-end">IDs Pending</th>
+                            <th scope="col">Circuit</th>
+                            <th scope="col">Registered</th>
+                            <th scope="col" class="text-end">Pre-Reg</th>
+                            <th scope="col" class="text-end">On-Site</th>
+                            <th scope="col">Camp IDs printed</th>
+                            <th scope="col" class="text-end">IDs Pending</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($perCircuit as $row)
                             <tr>
-                                <td>{{ $row['circuit'] }}</td>
-                                <td class="text-end">{{ $row['total'] }}</td>
-                                <td class="text-end">{{ $row['preRegistration'] }}</td>
-                                <td class="text-end">{{ $row['onSite'] }}</td>
-                                <td class="text-end">{{ $row['printed'] }}</td>
-                                <td class="text-end">{{ $row['pending'] }}</td>
+                                <th scope="row">{{ $row['circuit'] }}</th>
+                                <td>
+                                    <div class="duyog-dash-meter"><strong>{{ number_format($row['total']) }}</strong><span class="duyog-dash-bar" aria-hidden="true"><span style="width: {{ $percent($row['total'], $largestCircuit) }}%"></span></span></div>
+                                </td>
+                                <td class="text-end">{{ number_format($row['preRegistration']) }}</td>
+                                <td class="text-end">{{ number_format($row['onSite']) }}</td>
+                                <td>
+                                    <div class="duyog-dash-meter"><strong>{{ number_format($row['printed']) }}<small> / {{ number_format($row['total']) }}</small></strong><span class="duyog-dash-bar is-success" aria-hidden="true"><span style="width: {{ $percent($row['printed'], $row['total']) }}%"></span></span></div>
+                                </td>
+                                <td class="text-end">
+                                    @if ($row['pending'] > 0)
+                                        <span class="badge bg-label-warning">{{ number_format($row['pending']) }} pending</span>
+                                    @elseif ($row['total'] > 0)
+                                        <span class="badge bg-label-success"><i class="bx bx-check" aria-hidden="true"></i> Done</span>
+                                    @else
+                                        <span class="duyog-dash-muted">–</span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
+                    @if ($perCircuit->count() > 1)
+                        <tfoot>
+                            <tr>
+                                <th scope="row">All circuits</th>
+                                <td><strong>{{ number_format($perCircuit->sum('total')) }}</strong></td>
+                                <td class="text-end">{{ number_format($perCircuit->sum('preRegistration')) }}</td>
+                                <td class="text-end">{{ number_format($perCircuit->sum('onSite')) }}</td>
+                                <td><strong>{{ number_format($idsPrinted) }}<small> / {{ number_format($perCircuit->sum('total')) }}</small></strong></td>
+                                <td class="text-end">{{ number_format($idsPending) }}</td>
+                            </tr>
+                        </tfoot>
+                    @endif
                 </table>
             </div>
-        </div>
+        </section>
     @endif
 
-    <div class="row g-4">
-        @if (in_array(auth()->user()->role, [\App\Enums\Role::CircuitPresident, \App\Enums\Role::Secretary, \App\Enums\Role::Admin], true))
-            <div class="col-md-6 col-xl-4"><a href="/attendees" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-group fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Attendee roster</h2><p class="mb-0">Review, update, and manage camp registrations.</p></a></div>
-        @endif
-        @if (in_array(auth()->user()->role, [\App\Enums\Role::Secretary, \App\Enums\Role::Admin], true))
-            <div class="col-md-6 col-xl-4"><a href="/camp-ids" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-id-card fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Camp IDs</h2><p class="mb-0">Prepare and print attendee identification cards.</p></a></div>
-        @endif
-        @if (in_array(auth()->user()->role, [\App\Enums\Role::Security, \App\Enums\Role::Admin], true))
-            <div class="col-md-6 col-xl-4"><a href="/gate" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-scan fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Gate scanner</h2><p class="mb-0">Check attendees in and out at camp.</p></a></div>
-        @endif
-        @if (in_array(auth()->user()->role, [\App\Enums\Role::Secretary, \App\Enums\Role::Admin], true))
-            <div class="col-md-6 col-xl-4"><a href="/gate/review" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-flag fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Gate scan review</h2><p class="mb-0">Review flagged check-in and check-out scans.</p></a></div>
-        @endif
-        @if (in_array(auth()->user()->role, [\App\Enums\Role::Tabulator, \App\Enums\Role::Admin], true))
-            <div class="col-md-6 col-xl-4"><a href="/events" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-trophy fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Events &amp; scores</h2><p class="mb-0">Record event scores and follow circuit standings.</p></a></div>
-        @endif
-        @if (auth()->user()->role === \App\Enums\Role::Admin)
-            <div class="col-md-6 col-xl-4"><a href="/admin/youth-camps" class="duyog-card d-block h-100 p-4 text-decoration-none"><span class="bx bx-cog fs-2 duyog-icon-accent"></span><h2 class="h5 mt-3">Camp administration</h2><p class="mb-0">Manage camp details, staff, circuits, and churches.</p></a></div>
-        @endif
-    </div>
+    <section aria-labelledby="tools-title">
+        <div class="duyog-dash-section-heading">
+            <h2 id="tools-title">Your tools</h2>
+        </div>
+        <div class="duyog-dash-tools">
+            @foreach ($shortcuts as $shortcut)
+                <a href="{{ $shortcut['href'] }}" class="duyog-dash-tool">
+                    <span class="duyog-dash-tool-icon"><i class="bx {{ $shortcut['icon'] }}" aria-hidden="true"></i></span>
+                    <span class="duyog-dash-tool-copy"><strong>{{ $shortcut['title'] }}</strong><span>{{ $shortcut['text'] }}</span></span>
+                    <i class="bx bx-right-arrow-alt duyog-dash-tool-arrow" aria-hidden="true"></i>
+                </a>
+            @endforeach
+        </div>
+    </section>
 @endsection
-

@@ -3,11 +3,17 @@
 @section('title', 'Gate Scanner')
 
 @section('content')
+    @include('partials.page-head', [
+        'icon' => 'bx-scan',
+        'title' => 'Gate Scanner',
+        'text' => 'Choose IN or OUT, then point the camera at a Camp ID. Scans are saved on this device and sync when online.',
+    ])
+
     <div class="row g-4">
         <div class="col-lg-7">
             <div class="card mb-4">
                 <div class="card-body">
-                    <div class="d-flex gap-2 mb-3">
+                    <div class="duyog-gate-direction" role="group" aria-label="Scan direction">
                         <button type="button" id="dir-in" class="btn btn-lg flex-fill btn-success">IN</button>
                         <button type="button" id="dir-out" class="btn btn-lg flex-fill btn-outline-danger">OUT</button>
                     </div>
@@ -20,20 +26,24 @@
 
                     <video id="camera" class="w-100 rounded bg-dark" style="max-height: 320px; object-fit: cover;" muted playsinline></video>
                     <canvas id="camera-canvas" class="d-none"></canvas>
-                    <p id="camera-unavailable" class="text-muted small mt-2 d-none">
+                    <p id="camera-unavailable" class="alert alert-warning small mt-2 mb-0 d-none">
                         The camera could not be started (no camera, or permission was not granted). Use search or "Log by name" below.
                     </p>
                 </div>
             </div>
 
             <div class="card">
+                <div class="card-header duyog-panel-head">
+                    <h2><i class="bx bx-search" aria-hidden="true"></i> QR won't scan?</h2>
+                </div>
                 <div class="card-body">
                     <label class="form-label" for="search">Search by name (if the QR won't scan)</label>
                     <input type="text" id="search" class="form-control mb-2" placeholder="Type a name&hellip;" autocomplete="off">
                     <div id="search-results" class="list-group mb-3"></div>
 
+                    <label class="form-label" for="manual-name">Not on the list</label>
                     <div class="d-flex gap-2">
-                        <input type="text" id="manual-name" class="form-control" placeholder="Not found &mdash; type their full name">
+                        <input type="text" id="manual-name" class="form-control" placeholder="Not found &mdash; type their full name" autocomplete="off">
                         <button type="button" id="log-by-name" class="btn btn-outline-secondary text-nowrap">Log by name</button>
                     </div>
                 </div>
@@ -42,15 +52,17 @@
 
         <div class="col-lg-5">
             <div class="card">
+                <div class="card-header duyog-panel-head">
+                    <h2><i class="bx bx-mobile-alt" aria-hidden="true"></i> This device</h2>
+                </div>
                 <div class="card-body">
-                    <h6 class="card-title">Roster status</h6>
-                    <p class="mb-1">Last downloaded: <span id="roster-synced">never</span></p>
-                    <p class="mb-3"><span id="roster-count">0</span> Attendees on this device</p>
-                    <button type="button" id="refresh-roster" class="btn btn-sm btn-outline-primary mb-4">Refresh list</button>
-
-                    <h6 class="card-title">Sync status</h6>
-                    <p id="online-status" class="mb-1">Online</p>
-                    <p><span id="queue-count">0</span> scan(s) waiting to sync</p>
+                    <dl class="duyog-gate-status">
+                        <div><dt>Roster last downloaded</dt><dd id="roster-synced">never</dd></div>
+                        <div><dt>Attendees on this device</dt><dd id="roster-count">0</dd></div>
+                        <div><dt>Connection</dt><dd id="online-status">Online</dd></div>
+                        <div><dt>Scans waiting to sync</dt><dd id="queue-count">0</dd></div>
+                    </dl>
+                    <button type="button" id="refresh-roster" class="btn btn-outline-primary w-100"><i class="bx bx-refresh" aria-hidden="true"></i> Refresh list</button>
                 </div>
             </div>
         </div>

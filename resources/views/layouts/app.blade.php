@@ -24,7 +24,7 @@
         <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
             <div class="app-brand demo">
                 <a href="/dashboard" class="app-brand-link">
-                    <img src="{{ asset('images/duyog-emblem.jpg') }}" alt="" width="34" height="34" class="rounded-circle ms-2" style="object-fit: cover; object-position: center 44%;">
+                    <img src="{{ asset('images/duyog-emblem.webp') }}" alt="" width="34" height="34" class="rounded-circle ms-2" style="object-fit: cover; object-position: center 44%;">
                     <span class="app-brand-text demo menu-text fw-bolder ms-2">DUYOG '26</span>
                 </a>
                 <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
