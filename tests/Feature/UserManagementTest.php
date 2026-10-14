@@ -11,6 +11,24 @@ class UserManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_a_password_without_both_letters_and_numbers_is_rejected(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        foreach (['password', '12345678'] as $weakPassword) {
+            $this->actingAs($admin)
+                ->post('/admin/users', [
+                    'name' => 'Maria Reyes',
+                    'username' => 'maria.secretary',
+                    'role' => 'secretary',
+                    'password' => $weakPassword,
+                ])
+                ->assertSessionHasErrors('password');
+        }
+
+        $this->assertDatabaseMissing('users', ['username' => 'maria.secretary']);
+    }
+
     public function test_an_admin_creates_a_user_who_appears_in_the_user_list(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

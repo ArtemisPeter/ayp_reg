@@ -28,7 +28,9 @@ class GateScanRecorder
         }
 
         if ($qrCode !== null) {
-            $attendee = Attendee::where('qr_code', $qrCode)->first();
+            $attendee = Attendee::where('qr_code', $qrCode)
+                ->whereHas('youthCamp', fn ($camp) => $camp->where('is_current', true))
+                ->first();
 
             if ($attendee === null) {
                 return ['status' => 'invalid', 'mismatch' => false, 'message' => 'Card not recognized.', 'attendee' => null];

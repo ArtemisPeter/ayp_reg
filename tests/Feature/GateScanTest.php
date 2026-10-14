@@ -51,6 +51,23 @@ class GateScanTest extends TestCase
         ];
     }
 
+    public function test_a_camp_id_from_a_past_camp_is_not_accepted_at_the_gate(): void
+    {
+        $lastYear = YouthCamp::factory()->create(['is_current' => false]);
+        $oldCard = Attendee::factory()->create([
+            'youth_camp_id' => $lastYear->id,
+            'local_church_id' => $this->juan->local_church_id,
+        ]);
+
+        $response = $this->actingAs($this->security)
+            ->postJson('/gate/scans', $this->scanPayload(['qr_code' => $oldCard->qr_code]))
+            ->assertOk()
+            ->json();
+
+        $this->assertSame('invalid', $response['status']);
+        $this->assertDatabaseMissing('gate_scans', ['attendee_id' => $oldCard->id]);
+    }
+
     public function test_the_first_scan_of_an_attendee_records_them_as_in_with_no_mismatch(): void
     {
         $response = $this->actingAs($this->security)

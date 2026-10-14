@@ -14,6 +14,10 @@ class LoginController extends Controller
 
     private const LOCKOUT_SECONDS = 60;
 
+    private const MAX_ATTEMPTS_PER_ADDRESS = 30;
+
+    private const ADDRESS_LOCKOUT_SECONDS = 900;
+
     public function show()
     {
         return view('auth.login');
@@ -27,15 +31,17 @@ class LoginController extends Controller
         ]);
 
         $throttleKey = $this->throttleKey($request);
+        $addressKey = $this->addressThrottleKey($request);
 
-        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_ATTEMPTS) || RateLimiter::tooManyAttempts($addressKey, self::MAX_ATTEMPTS_PER_ADDRESS)) {
+            $seconds = max(RateLimiter::availableIn($throttleKey), RateLimiter::availableIn($addressKey));
 
             return back()->withErrors(['username' => "Too many sign-in attempts. Please try again in {$seconds} seconds."])->onlyInput('username');
         }
 
         if (! Auth::attempt($credentials)) {
             RateLimiter::hit($throttleKey, self::LOCKOUT_SECONDS);
+            RateLimiter::hit($addressKey, self::ADDRESS_LOCKOUT_SECONDS);
 
             return back()->withErrors(['username' => 'These credentials do not match our records.'])->onlyInput('username');
         }
@@ -53,6 +59,16 @@ class LoginController extends Controller
     private function throttleKey(Request $request): string
     {
         return Str::transliterate(Str::lower($request->string('username')->toString()).'|'.$request->ip());
+    }
+
+    /**
+     * Failed attempts from one IP address across every username, so nobody can try one common
+     * password against each account in turn. The limit is generous because the whole camp may
+     * share one Wi-Fi address, and a successful sign-in never clears it.
+     */
+    private function addressThrottleKey(Request $request): string
+    {
+        return 'login-address|'.$request->ip();
     }
 
     public function destroy(Request $request): RedirectResponse

@@ -60,6 +60,35 @@ class SignInTest extends TestCase
             ->assertRedirect('/dashboard');
     }
 
+    public function test_trying_many_usernames_from_one_address_locks_that_address_out(): void
+    {
+        User::factory()->create(['username' => 'maria.sec', 'password' => 'secret-pass-2']);
+
+        foreach (range(1, 30) as $attempt) {
+            $this->post('/login', ['username' => "guess.{$attempt}", 'password' => 'Password1']);
+        }
+
+        $this->from('/login')
+            ->post('/login', ['username' => 'maria.sec', 'password' => 'secret-pass-2'])
+            ->assertRedirect('/login')
+            ->assertSessionHasErrors('username');
+
+        $this->get('/dashboard')->assertRedirect('/login');
+    }
+
+    public function test_a_password_reset_signs_the_user_out_of_sessions_already_open(): void
+    {
+        $user = User::factory()->create(['username' => 'juan.admin', 'password' => 'secret-pass-1']);
+
+        $this->post('/login', ['username' => 'juan.admin', 'password' => 'secret-pass-1']);
+        $this->get('/dashboard')->assertOk();
+
+        $user->update(['password' => 'new-pass-22']);
+        $this->app['auth']->forgetGuards();
+
+        $this->get('/dashboard')->assertRedirect('/login');
+    }
+
     public function test_signing_out_closes_the_session(): void
     {
         $this->actingAs(User::factory()->create());

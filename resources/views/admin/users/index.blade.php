@@ -44,7 +44,7 @@
                 <div class="col-md-4">
                     <label class="form-label" for="password">Temporary password</label>
                     <input class="form-control" id="password" name="password" type="text" minlength="8" autocomplete="off" aria-describedby="password-help" required>
-                    <div class="form-text" id="password-help">At least 8 characters. They must replace it at first sign-in.</div>
+                    <div class="form-text" id="password-help">At least 8 characters, with letters and numbers. They must replace it at first sign-in.</div>
                 </div>
                 <div class="col-12">
                     <button class="btn btn-primary" type="submit"><i class="bx bx-user-plus" aria-hidden="true"></i> Add user</button>

@@ -33,6 +33,7 @@ Confirm each is present; install whatever the template didn't already include.
   - `REDIS_HOST` (usually `127.0.0.1` if Redis runs on the same VPS) and `REDIS_PASSWORD` if you set one on the Redis server itself
   - `MAIL_*` to a real SMTP account. It's currently `log` in dev, which silently swallows the backup-failure emails from `config/backup.php`. Without this, nobody finds out if a backup fails.
   - `BACKUP_NOTIFICATION_EMAIL` to whoever should get those emails (defaults to `MAIL_FROM_ADDRESS` if unset)
+  - `SESSION_SECURE_COOKIE=true`, so the sign-in cookie is only ever sent over HTTPS
   - `SESSION_LIFETIME` is set to 720 minutes (12 hours) instead of Laravel's 120-minute default, since a Security gate shift or a long registration day shouldn't get logged out mid-shift. Adjust to match your longest real shift.
 - [ ] `php artisan key:generate --force`
 - [ ] `php artisan migrate --force`

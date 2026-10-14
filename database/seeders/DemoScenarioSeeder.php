@@ -16,6 +16,7 @@ use App\Models\YouthCamp;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 /**
  * Sets up a scenario for clicking through the app by hand, built on real SMD data where it's
@@ -53,6 +54,10 @@ class DemoScenarioSeeder extends Seeder
 
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new RuntimeException('Demo seeders create accounts with a published password and must never run in production.');
+        }
+
         $this->wipePreviousRun();
 
         // Real camp information from the official DUYOG '26 poster.

@@ -15,7 +15,7 @@
                 <input type="password" class="form-control" id="password" name="password" minlength="8" autocomplete="new-password" aria-describedby="password-help" required autofocus>
                 <button type="button" class="duyog-field-toggle" data-password-toggle="password" aria-label="Show password" aria-pressed="false"><i class="bx bx-show" aria-hidden="true"></i></button>
             </div>
-            <p id="password-help" class="duyog-field-hint">At least 8 characters.</p>
+            <p id="password-help" class="duyog-field-hint">At least 8 characters, with letters and numbers.</p>
         </div>
         <div class="mb-4">
             <label for="password_confirmation" class="form-label">Confirm new password</label>

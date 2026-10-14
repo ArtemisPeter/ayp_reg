@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -32,7 +33,7 @@ class UserController extends Controller
                 'nullable',
                 Rule::exists('circuits', 'id')->whereNull('deleted_at'),
             ],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', Password::defaults()],
         ]);
 
         User::create($data + ['must_change_password' => true]);
@@ -53,7 +54,7 @@ class UserController extends Controller
 
     public function resetPassword(Request $request, User $user): RedirectResponse
     {
-        $data = $request->validate(['password' => ['required', 'string', 'min:8']]);
+        $data = $request->validate(['password' => ['required', 'string', Password::defaults()]]);
 
         $user->update(['password' => $data['password'], 'must_change_password' => true]);
 

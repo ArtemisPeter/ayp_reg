@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Circuit;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use RuntimeException;
 
 /**
  * Just the real SMD Circuits and one login per role — nothing else. No Youth Camp, Local
@@ -38,6 +39,10 @@ class CircuitsAndUsersSeeder extends Seeder
 
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new RuntimeException('Demo seeders create accounts with a published password and must never run in production.');
+        }
+
         $circuits = collect(self::CIRCUITS)->map(
             fn (string $colour, string $name) => Circuit::updateOrCreate(['name' => $name], ['colour' => $colour]),
         );
