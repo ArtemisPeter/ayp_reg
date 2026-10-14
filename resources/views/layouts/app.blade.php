@@ -47,6 +47,14 @@
                         </a>
                     </li>
                 @endif
+                @if (auth()->user()->role === \App\Enums\Role::CircuitPresident)
+                    <li class="menu-item {{ request()->is('churches') ? 'active' : '' }}">
+                        <a href="/churches" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-church"></i>
+                            <div>Local Churches</div>
+                        </a>
+                    </li>
+                @endif
                 @if (in_array(auth()->user()->role, [\App\Enums\Role::Secretary, \App\Enums\Role::Admin], true))
                     <li class="menu-item {{ request()->is('camp-ids*') ? 'active' : '' }}">
                         <a href="/camp-ids" class="menu-link">

@@ -6,8 +6,10 @@
     @include('partials.page-head', [
         'icon' => 'bx-church',
         'title' => $circuit->name.': Local Churches',
-        'text' => 'Church names here are the official names rosters must use.',
-        'back' => ['href' => '/admin/circuits', 'label' => 'All Circuits'],
+        'text' => $canEdit
+            ? 'Church names here are the official names rosters must use.'
+            : 'Church names here are the official names your roster must use. To rename or remove a church, ask the admin.',
+        'back' => $canEdit ? ['href' => '/admin/circuits', 'label' => 'All Circuits'] : null,
     ])
 
     <div class="card mb-4">
@@ -15,7 +17,7 @@
             <h2><i class="bx bx-plus-circle" aria-hidden="true"></i> Add a Local Church to {{ $circuit->name }}</h2>
         </div>
         <div class="card-body">
-            <form method="POST" action="/admin/circuits/{{ $circuit->id }}/churches" class="row g-3 align-items-end">
+            <form method="POST" action="{{ $churchesUrl }}" class="row g-3 align-items-end">
                 @csrf
                 <div class="col-md-9">
                     <label class="form-label" for="name">Church name</label>
@@ -42,9 +44,13 @@
         @else
             <div class="table-responsive">
                 <table class="table align-middle">
-                    <thead><tr><th scope="col">Church</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+                    <thead><tr><th scope="col">Church</th>@if ($canEdit)<th scope="col"><span class="visually-hidden">Remove</span></th>@endif</tr></thead>
                     <tbody class="table-border-bottom-0">
                         @foreach ($churches as $church)
+                            @unless ($canEdit)
+                                <tr><td>{{ $church->name }}</td></tr>
+                                @continue
+                            @endunless
                             <tr>
                                 <td>
                                     <form method="POST" action="/admin/circuits/{{ $circuit->id }}/churches/{{ $church->id }}" class="duyog-inline-form">

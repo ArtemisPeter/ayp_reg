@@ -17,6 +17,8 @@ class LocalChurchController extends Controller
         return view('admin.churches.index', [
             'circuit' => $circuit,
             'churches' => $circuit->localChurches()->orderBy('name')->get(),
+            'churchesUrl' => "/admin/circuits/{$circuit->id}/churches",
+            'canEdit' => true,
         ]);
     }
 

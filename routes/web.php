@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\YouthCampController;
 use App\Http\Controllers\AttendeeController;
 use App\Http\Controllers\CampIdController;
+use App\Http\Controllers\CircuitChurchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\GateController;
@@ -39,6 +40,11 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::post('/registrations/upload', [RegistrationUploadController::class, 'store'])
             ->middleware('role:circuit_president,secretary,admin');
+
+        Route::middleware('role:circuit_president')->group(function () {
+            Route::get('/churches', [CircuitChurchController::class, 'index']);
+            Route::post('/churches', [CircuitChurchController::class, 'store']);
+        });
 
         Route::middleware('role:secretary,admin')->group(function () {
             Route::post('/attendees', [AttendeeController::class, 'store']);

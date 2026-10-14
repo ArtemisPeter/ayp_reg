@@ -12,6 +12,7 @@
 
         $shortcuts = collect([
             ['roles' => [Role::CircuitPresident, Role::Secretary, Role::Admin], 'href' => '/attendees', 'icon' => 'bx-group', 'title' => 'Attendee roster', 'text' => 'Review, update, and manage camp registrations.'],
+            ['roles' => [Role::CircuitPresident], 'href' => '/churches', 'icon' => 'bx-church', 'title' => 'Local Churches', 'text' => 'See your circuit\'s churches and add a new one before uploading.'],
             ['roles' => [Role::Secretary, Role::Admin], 'href' => '/camp-ids', 'icon' => 'bx-id-card', 'title' => 'Camp IDs', 'text' => 'Prepare and print attendee identification cards.'],
             ['roles' => [Role::Security, Role::Admin], 'href' => '/gate', 'icon' => 'bx-scan', 'title' => 'Gate scanner', 'text' => 'Check attendees in and out at camp.'],
             ['roles' => [Role::Secretary, Role::Admin], 'href' => '/gate/review', 'icon' => 'bx-flag', 'title' => 'Gate scan review', 'text' => 'Review flagged check-in and check-out scans.'],

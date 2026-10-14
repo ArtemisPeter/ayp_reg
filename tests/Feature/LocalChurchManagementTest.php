@@ -80,6 +80,61 @@ class LocalChurchManagementTest extends TestCase
         $this->get("/admin/circuits/{$circuit->id}/churches")->assertSee('Grace Church');
     }
 
+    public function test_a_circuit_president_adds_a_church_to_their_own_circuit_and_sees_only_their_circuits_churches(): void
+    {
+        $digos = Circuit::factory()->create(['name' => 'Digos City']);
+        $davao = Circuit::factory()->create(['name' => 'Davao City']);
+        LocalChurch::factory()->create(['circuit_id' => $davao->id, 'name' => 'Davao Grace Church']);
+        $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $digos->id]);
+
+        $this->actingAs($president)
+            ->post('/churches', ['name' => 'Sto. Nino Church', 'circuit_id' => $davao->id])
+            ->assertRedirect('/churches');
+
+        $this->assertDatabaseHas('local_churches', ['circuit_id' => $digos->id, 'name' => 'Sto. Nino Church']);
+        $this->get('/churches')
+            ->assertSee('Sto. Nino Church')
+            ->assertDontSee('Davao Grace Church');
+    }
+
+    public function test_a_circuit_president_cannot_add_a_church_name_already_in_their_circuit(): void
+    {
+        $circuit = Circuit::factory()->create();
+        LocalChurch::factory()->create(['circuit_id' => $circuit->id, 'name' => 'Grace Church']);
+        $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $circuit->id]);
+
+        $this->actingAs($president)
+            ->from('/churches')
+            ->post('/churches', ['name' => 'grace church'])
+            ->assertSessionHasErrors('name');
+
+        $this->assertSame(1, $circuit->localChurches()->count());
+    }
+
+    public function test_a_circuit_president_cannot_rename_or_remove_a_church(): void
+    {
+        $circuit = Circuit::factory()->create();
+        $church = LocalChurch::factory()->create(['circuit_id' => $circuit->id, 'name' => 'Grace Church']);
+        $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $circuit->id]);
+
+        $this->actingAs($president)
+            ->put("/admin/circuits/{$circuit->id}/churches/{$church->id}", ['name' => 'Renamed'])
+            ->assertForbidden();
+        $this->delete("/admin/circuits/{$circuit->id}/churches/{$church->id}")->assertForbidden();
+
+        $this->get('/churches')->assertDontSee('Save')->assertDontSee('Remove');
+        $this->assertDatabaseHas('local_churches', ['id' => $church->id, 'name' => 'Grace Church', 'deleted_at' => null]);
+    }
+
+    public function test_other_staff_cannot_use_the_circuit_presidents_church_page(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'secretary']))
+            ->post('/churches', ['name' => 'Grace Church'])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('local_churches', 0);
+    }
+
     public function test_a_local_church_with_registered_attendees_cannot_be_removed(): void
     {
         $circuit = Circuit::factory()->create();
