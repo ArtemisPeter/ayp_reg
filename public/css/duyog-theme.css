@@ -949,3 +949,8 @@ body.duyog-auth-page::before { opacity: .2; }
     .duyog-toolbar .duyog-panel-meta { width: 100%; margin-left: 0; }
     .duyog-rankfield-row .duyog-rank-points { flex-basis: 6.5rem; }
 }
+
+/* Camp IDs: per-church print list */
+.duyog-church-print summary { cursor: pointer; font-weight: 600; color: var(--bs-primary); padding: .65rem 0; }
+.duyog-church-print summary:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; border-radius: 4px; }
+

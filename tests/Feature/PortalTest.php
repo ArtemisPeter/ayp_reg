@@ -185,7 +185,10 @@ class PortalTest extends TestCase
 
         $this->get('/')
             ->assertSee('Camp at a glance')
-            ->assertSee('Rev. Jade T. Diaz');
+            ->assertSee('Rev. Jade T. Diaz')
+            ->assertSee('downloads/duyog-26-rooted-camp-guide.pdf');
+
+        $this->assertFileExists(public_path('downloads/duyog-26-rooted-camp-guide.pdf'));
 
         $camp->update(['year' => 2027]);
 

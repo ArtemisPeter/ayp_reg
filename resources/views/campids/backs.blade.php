@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Camp ID backs: {{ $circuit->name }}</title>
+    <title>Camp ID backs: {{ $circuit->name }}{{ $church ? ' · '.$church->name : '' }}</title>
     @include('campids.styles')
 </head>
 <body>
 <div class="toolbar">
-    <span>{{ $circuit->name }}: backs (QR side). Print double-sided, flipping on the long edge.</span>
+    <span>{{ $circuit->name }}{{ $church ? ' · '.$church->name : '' }}: backs (QR side). Print double-sided, flipping on the long edge.</span>
 </div>
 @foreach ($sheets as $sheet)
     <div class="sheet">

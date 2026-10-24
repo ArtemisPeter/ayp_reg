@@ -8,11 +8,11 @@
     @include('partials.page-head', [
         'icon' => 'bx-id-card',
         'title' => 'Camp IDs',
-        'text' => 'Print Camp IDs one Circuit at a time. Viewing a page never marks anything as printed.',
+        'text' => 'Print Camp IDs for a whole Circuit, or open "Print by Local Church" to print one church at a time. Viewing a page never marks anything as printed.',
     ])
 
     <ol class="duyog-steps-inline mb-4">
-        <li>Print the fronts for a Circuit.</li>
+        <li>Print the fronts for a Circuit or a Local Church.</li>
         <li>Print the backs, double-sided, flipping on the long edge.</li>
         <li>Only when both sides came out right, use "Mark as printed" at the top of the fronts page.</li>
     </ol>
@@ -53,6 +53,27 @@
                                     @endif
                                 </td>
                             </tr>
+                            @php($pendingChurches = $churchesByCircuit->get($circuit->id, collect()))
+                            @if ($pendingChurches->isNotEmpty())
+                                <tr>
+                                    <td colspan="4" class="pt-0">
+                                        <details class="duyog-church-print">
+                                            <summary>Print by Local Church <span class="text-muted">({{ $pendingChurches->count() }} {{ Str::plural('church', $pendingChurches->count()) }} waiting)</span></summary>
+                                            <ul class="list-unstyled mb-0 mt-2">
+                                                @foreach ($pendingChurches as $church)
+                                                    <li class="d-flex flex-wrap align-items-center gap-2 py-1 border-top">
+                                                        <span class="me-auto">{{ $church->name }} <span class="badge bg-label-warning ms-1">{{ $church->pending_count }}</span></span>
+                                                        <span class="duyog-row-actions">
+                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="/camp-ids/{{ $circuit->id }}/fronts?church={{ $church->id }}" aria-label="Print fronts for {{ $church->name }}"><i class="bx bx-printer" aria-hidden="true"></i> Fronts</a>
+                                                            <a class="btn btn-sm btn-outline-secondary" target="_blank" href="/camp-ids/{{ $circuit->id }}/backs?church={{ $church->id }}" aria-label="Print backs for {{ $church->name }}"><i class="bx bx-printer" aria-hidden="true"></i> Backs</a>
+                                                        </span>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </details>
+                                    </td>
+                                </tr>
+                            @endif
                         @endforeach
                     </tbody>
                 </table>

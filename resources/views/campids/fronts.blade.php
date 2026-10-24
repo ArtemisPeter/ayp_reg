@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Camp ID fronts: {{ $circuit->name }}</title>
+    <title>Camp ID fronts: {{ $circuit->name }}{{ $church ? ' · '.$church->name : '' }}</title>
     @include('campids.styles')
 </head>
 <body>
 <div class="toolbar">
-    <span>{{ $circuit->name }}: {{ $attendees->count() }} Camp ID(s) to print, fronts</span>
+    <span>{{ $circuit->name }}{{ $church ? ' · '.$church->name : '' }}: {{ $attendees->count() }} Camp ID(s) to print, fronts</span>
     <a href="/camp-ids">Back to Camp IDs</a>
     @if ($attendees->isNotEmpty())
         <form method="POST" action="/camp-ids/{{ $circuit->id }}/printed" onsubmit="return confirm('Only confirm if both the fronts and the backs printed correctly. Mark these {{ $attendees->count() }} Camp ID(s) as printed?')">

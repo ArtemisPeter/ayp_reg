@@ -120,6 +120,72 @@ class CampIdPrintingTest extends TestCase
             ]);
     }
 
+    public function test_the_secretary_can_print_one_local_churchs_cards_and_mark_only_those_printed(): void
+    {
+        $grace = LocalChurch::factory()->create(['circuit_id' => $this->digos->id, 'name' => 'Grace Church']);
+        $hope = LocalChurch::factory()->create(['circuit_id' => $this->digos->id, 'name' => 'Hope Church']);
+        $juan = $this->attendeeIn($this->digos, 'Juan', 'Cruz', ['local_church_id' => $grace->id]);
+        $this->attendeeIn($this->digos, 'Maria', 'Santos', ['local_church_id' => $grace->id]);
+        $this->attendeeIn($this->digos, 'Ramon', 'Bautista', ['local_church_id' => $hope->id]);
+
+        $this->actingAs($this->secretary)
+            ->get('/camp-ids')
+            ->assertViewHas('churchesByCircuit', fn ($churches) => $churches[$this->digos->id]->pluck('pending_count', 'name')->all() === [
+                'Grace Church' => 2,
+                'Hope Church' => 1,
+            ]);
+
+        $this->get("/camp-ids/{$this->digos->id}/fronts?church={$grace->id}")
+            ->assertOk()
+            ->assertSee('Grace Church')
+            ->assertSee('Juan')
+            ->assertSee('Maria')
+            ->assertDontSee('Ramon');
+
+        $this->post("/camp-ids/{$this->digos->id}/printed", ['attendee_ids' => [$juan->id]]);
+
+        $this->get("/camp-ids/{$this->digos->id}/fronts")
+            ->assertDontSee('Juan')
+            ->assertSee('Maria')
+            ->assertSee('Ramon');
+    }
+
+    public function test_the_backs_for_one_local_church_carry_only_that_churchs_qr_ids(): void
+    {
+        $qr = new class implements QrCodeSvg
+        {
+            /** @var array<int, string> */
+            public array $payloads = [];
+
+            public function render(string $payload): string
+            {
+                $this->payloads[] = $payload;
+
+                return '<svg></svg>';
+            }
+        };
+        $this->app->instance(QrCodeSvg::class, $qr);
+        $grace = LocalChurch::factory()->create(['circuit_id' => $this->digos->id]);
+        $juan = $this->attendeeIn($this->digos, 'Juan', 'Cruz', ['local_church_id' => $grace->id]);
+        $this->attendeeIn($this->digos, 'Ramon', 'Bautista');
+
+        $this->actingAs($this->secretary)
+            ->get("/camp-ids/{$this->digos->id}/backs?church={$grace->id}")
+            ->assertOk();
+
+        $this->assertSame([$juan->qr_code], $qr->payloads);
+    }
+
+    public function test_a_church_from_another_circuit_cannot_be_printed_under_this_circuit(): void
+    {
+        $davaoChurch = LocalChurch::factory()->create(['circuit_id' => $this->davao->id]);
+        $this->attendeeIn($this->davao, 'Ramon', 'Bautista', ['local_church_id' => $davaoChurch->id]);
+
+        $this->actingAs($this->secretary)
+            ->get("/camp-ids/{$this->digos->id}/fronts?church={$davaoChurch->id}")
+            ->assertNotFound();
+    }
+
     public function test_the_secretary_can_print_a_single_attendees_card_front_and_back(): void
     {
         $qr = new class implements QrCodeSvg

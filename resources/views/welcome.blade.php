@@ -90,7 +90,7 @@
 
     @if ((int) $camp?->year === 2026)
         <section id="camp" class="duyog-lp-about duyog-lp-section" aria-labelledby="camp-title" data-reveal>
-            <a class="duyog-lp-poster" href="{{ asset('images/duyog-speaker-poster.jpg') }}" aria-label="Open the full-size official poster">
+            <a class="duyog-lp-poster" href="{{ asset('downloads/duyog-26-rooted-camp-guide.pdf') }}" target="_blank" rel="noopener" aria-label="Open the DUYOG '26 camp guide (PDF)">
                 <img src="{{ asset('images/duyog-speaker-poster.webp') }}" alt="Official DUYOG '26 poster: {{ $camp->theme }}, with speaker Rev. Jade T. Diaz" width="900" height="1273" loading="lazy" decoding="async">
             </a>
             <div class="duyog-lp-about-copy">
@@ -107,7 +107,7 @@
                         <dd>Youth and Pastors of the district</dd>
                     </div>
                 </dl>
-                <a class="btn duyog-lp-btn duyog-lp-btn-ghost" href="{{ asset('images/duyog-speaker-poster.jpg') }}" download><i class="bx bx-download" aria-hidden="true"></i> Download the poster <span class="duyog-lp-btn-meta">JPG, 6 MB</span></a>
+                <a class="btn duyog-lp-btn duyog-lp-btn-ghost" href="{{ asset('downloads/duyog-26-rooted-camp-guide.pdf') }}" download><i class="bx bx-download" aria-hidden="true"></i> Download the camp guide <span class="duyog-lp-btn-meta">PDF, 3 MB</span></a>
             </div>
         </section>
     @endif
