@@ -102,10 +102,6 @@
                         <dt><i class="bx bx-microphone" aria-hidden="true"></i> Speaker</dt>
                         <dd>Rev. Jade T. Diaz</dd>
                     </div>
-                    <div>
-                        <dt><i class="bx bx-group" aria-hidden="true"></i> Who it's for</dt>
-                        <dd>Youth and Pastors of the district</dd>
-                    </div>
                 </dl>
                 <a class="btn duyog-lp-btn duyog-lp-btn-ghost" href="{{ asset('downloads/duyog-26-rooted-camp-guide.pdf') }}" download><i class="bx bx-download" aria-hidden="true"></i> Download the camp guide <span class="duyog-lp-btn-meta">PDF, 3 MB</span></a>
             </div>
