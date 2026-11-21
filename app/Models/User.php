@@ -12,13 +12,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'username', 'password', 'role', 'circuit_id', 'must_change_password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * A new password, a role change or removing the account signs the gate app out on every phone.
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (User $user): void {
+            if ($user->wasChanged(['password', 'role'])) {
+                $user->tokens()->delete();
+            }
+        });
+
+        static::deleted(fn (User $user) => $user->tokens()->delete());
+    }
 
     /**
      * Get the attributes that should be cast.
