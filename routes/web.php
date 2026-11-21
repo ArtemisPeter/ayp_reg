@@ -72,6 +72,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
 
         Route::middleware('role:secretary,admin')->group(function () {
             Route::get('/gate/review', [GateScanController::class, 'review']);
+            Route::delete('/gate/scans/{gateScan}', [GateScanController::class, 'destroy']);
         });
 
         Route::middleware('role:tabulator,admin')->group(function () {

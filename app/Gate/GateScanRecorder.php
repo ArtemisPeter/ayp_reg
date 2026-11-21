@@ -23,7 +23,8 @@ class GateScanRecorder
         ?string $qrCode,
         ?string $manualName,
     ): array {
-        if ($existing = GateScan::where('client_scan_id', $clientScanId)->first()) {
+        // A scanner may resend a queued scan after staff deleted it in review; answer it again rather than recreating it.
+        if ($existing = GateScan::withTrashed()->where('client_scan_id', $clientScanId)->first()) {
             return $this->toResponse($existing);
         }
 

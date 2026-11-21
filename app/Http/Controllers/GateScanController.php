@@ -8,6 +8,7 @@ use App\Models\Attendee;
 use App\Models\GateScan;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -32,11 +33,26 @@ class GateScanController extends Controller
     public function review()
     {
         return view('gate.review', [
-            'scans' => GateScan::with(['attendee', 'scannedBy'])
+            'scans' => GateScan::with([
+                'attendee' => fn ($attendee) => $attendee->withTrashed()->with([
+                    'localChurch' => fn ($church) => $church->withTrashed()->with(['circuit' => fn ($circuit) => $circuit->withTrashed()]),
+                ]),
+                'scannedBy',
+            ])
                 ->where(fn ($query) => $query->where('is_mismatch', true)->orWhereNull('attendee_id'))
                 ->orderByDesc('scanned_at')
                 ->get(),
         ]);
+    }
+
+    /**
+     * Removes a scan logged in error. It drops out of the review log and of the Attendee's in/out history.
+     */
+    public function destroy(GateScan $gateScan): RedirectResponse
+    {
+        $gateScan->delete();
+
+        return redirect('/gate/review');
     }
 
     public function store(Request $request, GateScanRecorder $recorder): JsonResponse
