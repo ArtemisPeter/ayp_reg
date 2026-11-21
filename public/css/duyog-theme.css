@@ -954,3 +954,8 @@ body.duyog-auth-page::before { opacity: .2; }
 .duyog-church-print summary { cursor: pointer; font-weight: 600; color: var(--bs-primary); padding: .65rem 0; }
 .duyog-church-print summary:focus-visible { outline: 2px solid var(--bs-primary); outline-offset: 2px; border-radius: 4px; }
 
+
+/* Attendees: live roster search */
+#roster_results { transition: opacity .15s ease; }
+#roster_results[aria-busy="true"] { opacity: .55; }
+

@@ -8,6 +8,7 @@ use App\Enums\Role;
 use App\Models\Attendee;
 use App\Models\LocalChurch;
 use App\Models\YouthCamp;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -28,9 +29,7 @@ class AttendeeController extends Controller
             )
             ->when($search !== '', function ($query) use ($search) {
                 foreach (preg_split('/\s+/', $search) as $word) {
-                    $like = '%'.addcslashes($word, '%_\\').'%';
-
-                    $query->where(fn ($name) => $name->where('first_name', 'like', $like)->orWhere('last_name', 'like', $like));
+                    $query->where(fn ($match) => $this->matchesSearchWord($match, $word));
                 }
             })
             ->orderBy('last_name')
@@ -112,6 +111,48 @@ class AttendeeController extends Controller
                 ->get()
                 ->sortBy('circuit.name'),
         ]);
+    }
+
+    /**
+     * Matches one search word against any part of an Attendee's row: their names, Local Church,
+     * Circuit and birthday, or the Baptismal, Type and Registration columns by the words shown in them.
+     */
+    private function matchesSearchWord(Builder $query, string $word): Builder
+    {
+        $like = '%'.addcslashes($word, '%_\\').'%';
+        $keyword = mb_strtolower(trim($word, '.,'));
+
+        $query->where('first_name', 'like', $like)
+            ->orWhere('middle_name', 'like', $like)
+            ->orWhere('last_name', 'like', $like)
+            ->orWhere('birthday', 'like', $like)
+            ->orWhereHas('localChurch', fn ($church) => $church->where('name', 'like', $like)
+                ->orWhereHas('circuit', fn ($circuit) => $circuit->where('name', 'like', $like)));
+
+        $columnValues = [
+            'yes' => ['is_baptized', true],
+            'baptized' => ['is_baptized', true],
+            'baptised' => ['is_baptized', true],
+            'no' => ['is_baptized', false],
+            'unbaptized' => ['is_baptized', false],
+            'youth' => ['type', AttendeeType::Youth],
+            'pastor' => ['type', AttendeeType::Pastor],
+            'pastors' => ['type', AttendeeType::Pastor],
+            'pre' => ['registration_type', RegistrationType::PreRegistration],
+            'pre-reg' => ['registration_type', RegistrationType::PreRegistration],
+            'pre-registration' => ['registration_type', RegistrationType::PreRegistration],
+            'preregistration' => ['registration_type', RegistrationType::PreRegistration],
+            'on-site' => ['registration_type', RegistrationType::OnSite],
+            'onsite' => ['registration_type', RegistrationType::OnSite],
+            'walk-in' => ['registration_type', RegistrationType::OnSite],
+        ];
+
+        if (isset($columnValues[$keyword])) {
+            [$column, $value] = $columnValues[$keyword];
+            $query->orWhere($column, $value);
+        }
+
+        return $query;
     }
 
     /**

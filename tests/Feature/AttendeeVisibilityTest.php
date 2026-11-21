@@ -71,6 +71,45 @@ class AttendeeVisibilityTest extends TestCase
             ->assertDontSee('Juan');
     }
 
+    /**
+     * @param  array<int, string>  $expected
+     */
+    #[DataProvider('searchesBeyondTheName')]
+    public function test_the_search_matches_church_circuit_birthday_and_the_status_columns(string $search, array $expected): void
+    {
+        $camp = YouthCamp::where('is_current', true)->first();
+        $grace = LocalChurch::factory()->create(['circuit_id' => $this->digos->id, 'name' => 'Grace Church']);
+        Attendee::factory()->create([
+            'youth_camp_id' => $camp->id, 'local_church_id' => $grace->id, 'first_name' => 'Ana', 'last_name' => 'Reyes',
+            'birthday' => '2008-04-03', 'is_baptized' => true, 'type' => 'youth', 'registration_type' => 'pre_registration',
+        ]);
+        Attendee::factory()->create([
+            'youth_camp_id' => $camp->id, 'local_church_id' => $grace->id, 'first_name' => 'Ben', 'last_name' => 'Lopez',
+            'birthday' => '1975-11-20', 'is_baptized' => false, 'type' => 'pastor', 'registration_type' => 'on_site',
+        ]);
+
+        $this->actingAs(User::factory()->create(['role' => 'secretary']))
+            ->get('/attendees?search='.urlencode($search))
+            ->assertViewHas('attendees', fn ($attendees) => $attendees->pluck('first_name')->sort()->values()->all() === $expected);
+    }
+
+    /**
+     * @return array<string, array{string, array<int, string>}>
+     */
+    public static function searchesBeyondTheName(): array
+    {
+        return [
+            'church' => ['grace', ['Ana', 'Ben']],
+            'circuit and church together' => ['digos grace', ['Ana', 'Ben']],
+            'birthday' => ['1975', ['Ben']],
+            'baptized' => ['grace yes', ['Ana']],
+            'not baptized' => ['grace no', ['Ben']],
+            'pastor' => ['pastor', ['Ben']],
+            'pre-registration' => ['grace pre-reg', ['Ana']],
+            'on-site youth matches nobody' => ['on-site youth', []],
+        ];
+    }
+
     public function test_a_circuit_presidents_search_never_reaches_another_circuit(): void
     {
         $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $this->digos->id]);

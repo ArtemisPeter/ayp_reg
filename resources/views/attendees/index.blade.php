@@ -152,16 +152,14 @@
         <div class="card-header duyog-panel-head">
             <h2><i class="bx bx-list-ul" aria-hidden="true"></i> Roster</h2>
         </div>
-        <form method="GET" action="/attendees" class="duyog-toolbar" role="search">
+        <form method="GET" action="/attendees" class="duyog-toolbar" role="search" id="roster_search_form">
             <div class="duyog-search">
                 <i class="bx bx-search" aria-hidden="true"></i>
-                <input class="form-control" name="search" type="search" value="{{ $search }}" placeholder="Search by first or last name" aria-label="Search attendees by name">
+                <input class="form-control" id="roster_search" name="search" type="search" value="{{ $search }}" placeholder="Search name, church, Circuit, birthday, Yes/No, Youth/Pastor, Pre-Reg/On-Site" aria-label="Search attendees" aria-controls="roster_results" autocomplete="off">
             </div>
             <button class="btn btn-outline-primary" type="submit">Search</button>
-            @if ($search !== '')
-                <a class="btn btn-outline-secondary" href="/attendees">Clear</a>
-            @endif
-            <span class="duyog-panel-meta">
+            <a class="btn btn-outline-secondary" id="roster_search_clear" href="/attendees" @if ($search === '') hidden @endif>Clear</a>
+            <span class="duyog-panel-meta" id="roster_meta" aria-live="polite">
                 @if ($attendees->total() === 0)
                     {{ $search === '' ? 'No attendees yet' : 'No attendees match' }}
                 @else
@@ -170,11 +168,12 @@
             </span>
         </form>
 
+        <div id="roster_results">
         @if ($attendees->total() === 0)
             <div class="duyog-empty">
                 <i class="bx {{ $search === '' ? 'bx-group' : 'bx-search-alt' }}" aria-hidden="true"></i>
-                <strong>{{ $search === '' ? 'Nobody is registered yet' : 'No one matches that name' }}</strong>
-                <span>{{ $search === '' ? 'Attendees appear here once a roster is uploaded.' : 'Check the spelling, or clear the search to see everyone.' }}</span>
+                <strong>{{ $search === '' ? 'Nobody is registered yet' : 'No one matches that search' }}</strong>
+                <span>{{ $search === '' ? 'Attendees appear here once a roster is uploaded.' : 'Check the spelling, or clear the search to see everyone. Every word must match.' }}</span>
             </div>
         @else
             <div class="table-responsive">
@@ -225,5 +224,66 @@
                 {{ $attendees->links('pagination::bootstrap-5') }}
             </div>
         @endif
+        </div>
     </div>
+
+    <script>
+        (() => {
+            const form = document.getElementById('roster_search_form');
+            const input = document.getElementById('roster_search');
+            const clear = document.getElementById('roster_search_clear');
+            const meta = document.getElementById('roster_meta');
+            const results = document.getElementById('roster_results');
+            let timer = null;
+            let pending = null;
+
+            const load = async (search) => {
+                const url = new URL(form.action, window.location.origin);
+                if (search !== '') {
+                    url.searchParams.set('search', search);
+                }
+
+                pending?.abort();
+                pending = new AbortController();
+                results.setAttribute('aria-busy', 'true');
+
+                try {
+                    const response = await fetch(url, { signal: pending.signal, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (! response.ok) {
+                        throw new Error(response.statusText);
+                    }
+
+                    const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    results.innerHTML = page.getElementById('roster_results').innerHTML;
+                    meta.textContent = page.getElementById('roster_meta').textContent.trim();
+                    clear.hidden = search === '';
+                    history.replaceState(null, '', url);
+                } catch (error) {
+                    if (error.name !== 'AbortError') {
+                        form.submit();
+                    }
+                } finally {
+                    results.removeAttribute('aria-busy');
+                }
+            };
+
+            input.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => load(input.value.trim()), 300);
+            });
+
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                clearTimeout(timer);
+                load(input.value.trim());
+            });
+
+            clear.addEventListener('click', (event) => {
+                event.preventDefault();
+                input.value = '';
+                load('');
+                input.focus();
+            });
+        })();
+    </script>
 @endsection
