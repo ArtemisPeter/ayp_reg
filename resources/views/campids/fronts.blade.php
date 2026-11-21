@@ -23,9 +23,9 @@
     <div class="sheet">
         @foreach ($sheet as $attendee)
             <div class="card card-front">
-                <div class="band" style="background: {{ $circuit->colour }}"></div>
-                <div class="first-name">{{ $attendee->first_name }}</div>
-                <div class="circuit" style="color: {{ $circuit->colour }}">{{ $circuit->name }}</div>
+                <img class="art" src="{{ asset('images/camp-id/front.jpg') }}" alt="">
+                <div class="first-name"><span>{{ $attendee->first_name }}</span></div>
+                <div class="circuit" style="color: {{ $circuit->colour }}"><span>{{ $circuit->name }}</span></div>
             </div>
         @endforeach
     </div>

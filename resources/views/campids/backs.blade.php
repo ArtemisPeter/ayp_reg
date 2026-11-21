@@ -14,6 +14,7 @@
         @foreach ($sheet as $svg)
             <div class="card card-back">
                 @if ($svg !== null)
+                    <img class="art" src="{{ asset('images/camp-id/back.jpg') }}" alt="">
                     <div class="qr">{!! $svg !!}</div>
                 @endif
             </div>
