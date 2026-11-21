@@ -141,7 +141,7 @@
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead>
-                        <tr><th scope="col">Name</th><th scope="col">Local Church</th><th scope="col">Birthday</th><th scope="col">Baptismal</th><th scope="col">Type</th><th scope="col">Registration</th>@if ($canManage)<th scope="col"><span class="visually-hidden">Actions</span></th>@endif</tr>
+                        <tr><th scope="col">Name</th><th scope="col">Local Church</th><th scope="col">Birthday</th><th scope="col">Baptismal</th><th scope="col">Type</th><th scope="col">Registration</th>@if ($canUpload)<th scope="col"><span class="visually-hidden">Actions</span></th>@endif</tr>
                     </thead>
                     <tbody class="table-border-bottom-0">
                         @foreach ($attendees as $attendee)
@@ -169,6 +169,10 @@
                                             <a class="btn btn-sm btn-outline-secondary" target="_blank" href="/attendees/{{ $attendee->id }}/camp-id"><i class="bx bx-id-card" aria-hidden="true"></i> Camp ID</a>
                                             <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bx bx-trash" aria-hidden="true"></i> Remove</button>
                                         </form>
+                                    </td>
+                                @elseif ($canUpload)
+                                    <td class="text-nowrap text-end">
+                                        <a class="btn btn-sm btn-outline-primary" href="/attendees/{{ $attendee->id }}/edit"><i class="bx bx-edit-alt" aria-hidden="true"></i> Edit</a>
                                     </td>
                                 @endif
                             </tr>

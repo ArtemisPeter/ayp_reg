@@ -122,13 +122,52 @@ class SecretaryAttendeeManagementTest extends TestCase
         $this->get('/attendees')->assertSee('Cruz');
     }
 
-    public function test_a_circuit_president_cannot_edit_or_remove_an_attendee(): void
+    public function test_a_circuit_president_edits_an_attendee_of_their_circuit_but_cannot_remove_them(): void
     {
         $juan = $this->registeredJuan();
         $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $this->grace->circuit_id]);
 
-        $this->actingAs($president)->put("/attendees/{$juan->id}", $this->onSiteForm())->assertForbidden();
+        $this->actingAs($president)->get("/attendees/{$juan->id}/edit")->assertOk();
+
+        $this->put("/attendees/{$juan->id}", $this->onSiteForm(['first_name' => 'Juanito', 'birthday' => '2008-04-04']))
+            ->assertRedirect('/attendees');
+
+        $this->get('/attendees')
+            ->assertSee('Juanito')
+            ->assertSee('2008-04-04')
+            ->assertSee('Camp ID needs reprint');
+
         $this->delete("/attendees/{$juan->id}")->assertForbidden();
+        $this->assertNotSoftDeleted($juan);
+    }
+
+    public function test_a_circuit_president_cannot_edit_an_attendee_of_another_circuit(): void
+    {
+        $juan = $this->registeredJuan();
+        $davao = Circuit::factory()->create(['name' => 'Davao City']);
+        $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $davao->id]);
+
+        $this->actingAs($president)->get("/attendees/{$juan->id}/edit")->assertForbidden();
+        $this->put("/attendees/{$juan->id}", $this->onSiteForm(['first_name' => 'Juanito']))->assertForbidden();
+
+        $this->assertSame('Juan', $juan->fresh()->first_name);
+    }
+
+    public function test_a_circuit_president_cannot_move_an_attendee_to_a_church_of_another_circuit(): void
+    {
+        $juan = $this->registeredJuan();
+        $davaoChurch = LocalChurch::factory()->create(['circuit_id' => Circuit::factory()->create()->id, 'name' => 'Davao Church']);
+        $president = User::factory()->create(['role' => 'circuit_president', 'circuit_id' => $this->grace->circuit_id]);
+
+        $this->actingAs($president)
+            ->get("/attendees/{$juan->id}/edit")
+            ->assertDontSee('Davao Church');
+
+        $this->from("/attendees/{$juan->id}/edit")
+            ->put("/attendees/{$juan->id}", $this->onSiteForm(['local_church_id' => $davaoChurch->id]))
+            ->assertSessionHasErrors('local_church_id');
+
+        $this->assertSame($this->grace->id, $juan->fresh()->local_church_id);
     }
 
     public function test_the_secretary_uploads_an_on_site_file_covering_several_circuits(): void

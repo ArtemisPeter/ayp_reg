@@ -46,10 +46,13 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
             Route::post('/churches', [CircuitChurchController::class, 'store']);
         });
 
-        Route::middleware('role:secretary,admin')->group(function () {
-            Route::post('/attendees', [AttendeeController::class, 'store']);
+        Route::middleware('role:circuit_president,secretary,admin')->group(function () {
             Route::get('/attendees/{attendee}/edit', [AttendeeController::class, 'edit']);
             Route::put('/attendees/{attendee}', [AttendeeController::class, 'update']);
+        });
+
+        Route::middleware('role:secretary,admin')->group(function () {
+            Route::post('/attendees', [AttendeeController::class, 'store']);
             Route::delete('/attendees/{attendee}', [AttendeeController::class, 'destroy']);
 
             Route::get('/camp-ids', [CampIdController::class, 'index']);

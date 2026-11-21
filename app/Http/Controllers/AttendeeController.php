@@ -71,6 +71,8 @@ class AttendeeController extends Controller
 
     public function update(Request $request, Attendee $attendee): RedirectResponse
     {
+        $this->ensureCanEdit($request, $attendee);
+
         $data = $this->validated($request);
 
         if ($this->isAlreadyRegistered($attendee->youth_camp_id, $data, ignoring: $attendee->id)) {
@@ -97,12 +99,46 @@ class AttendeeController extends Controller
         return redirect('/attendees');
     }
 
-    public function edit(Attendee $attendee)
+    public function edit(Request $request, Attendee $attendee)
     {
+        $this->ensureCanEdit($request, $attendee);
+
         return view('attendees.edit', [
             'attendee' => $attendee->load('localChurch.circuit'),
-            'churches' => LocalChurch::with('circuit')->orderBy('name')->get()->sortBy('circuit.name'),
+            'churches' => LocalChurch::with('circuit')
+                ->when($this->circuitPresidentCircuitId($request), fn ($query, int $circuitId) => $query->where('circuit_id', $circuitId))
+                ->orderBy('name')
+                ->get()
+                ->sortBy('circuit.name'),
         ]);
+    }
+
+    /**
+     * A Circuit President may edit only current-camp Attendees of their own Circuit.
+     */
+    private function ensureCanEdit(Request $request, Attendee $attendee): void
+    {
+        if ($request->user()->role !== Role::CircuitPresident) {
+            return;
+        }
+
+        $circuitId = $request->user()->circuit_id;
+        $attendee->loadMissing('localChurch', 'youthCamp');
+
+        abort_unless(
+            $circuitId !== null
+                && $attendee->localChurch?->circuit_id === $circuitId
+                && $attendee->youthCamp?->is_current,
+            403,
+        );
+    }
+
+    /**
+     * The Circuit a Circuit President is limited to, or null for staff who see every Circuit.
+     */
+    private function circuitPresidentCircuitId(Request $request): ?int
+    {
+        return $request->user()->role === Role::CircuitPresident ? $request->user()->circuit_id : null;
     }
 
     /**
@@ -110,11 +146,18 @@ class AttendeeController extends Controller
      */
     private function validated(Request $request): array
     {
+        $circuitId = $this->circuitPresidentCircuitId($request);
+
         return $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'local_church_id' => ['required', Rule::exists('local_churches', 'id')->whereNull('deleted_at')],
+            'local_church_id' => [
+                'required',
+                Rule::exists('local_churches', 'id')
+                    ->whereNull('deleted_at')
+                    ->when($circuitId !== null, fn ($rule) => $rule->where('circuit_id', $circuitId)),
+            ],
             'birthday' => ['required', 'date_format:Y-m-d'],
             'baptismal' => ['required', 'in:Yes,No'],
             'type' => ['required', 'in:Y,P'],
