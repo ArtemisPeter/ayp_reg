@@ -67,6 +67,72 @@ class CircuitPresidentUploadTest extends TestCase
             ->assertSee('Santos');
     }
 
+    public function test_uploads_are_accepted_through_the_whole_deadline_day_and_refused_after_it(): void
+    {
+        YouthCamp::first()->update(['pre_registration_deadline' => '2026-11-21']);
+
+        $this->travelTo(now('Asia/Manila')->setDate(2026, 11, 21)->setTime(23, 59));
+        $this->actingAs($this->president)
+            ->post('/registrations/upload', ['file' => $this->csv(['Juan,,Cruz,Grace Church,Digos City,04/03/2008,Yes,Y'])])
+            ->assertSessionHasNoErrors();
+
+        $this->travelTo(now('Asia/Manila')->setDate(2026, 11, 22)->setTime(0, 1));
+        $this->post('/registrations/upload', ['file' => $this->csv(['Maria,,Santos,Faith Church,Digos City,11/20/2001,No,Y'])])
+            ->assertRedirect('/attendees')
+            ->assertSessionHasErrors('file');
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Juan']);
+        $this->assertDatabaseMissing('attendees', ['first_name' => 'Maria']);
+        $this->get('/attendees')
+            ->assertSee('Pre-registration closed on November 21, 2026')
+            ->assertSee('type="submit" disabled', false);
+    }
+
+    public function test_the_secretary_can_still_upload_on_site_rosters_after_the_pre_registration_deadline(): void
+    {
+        YouthCamp::first()->update(['pre_registration_deadline' => now()->subDays(3)->toDateString()]);
+
+        $this->actingAs(User::factory()->create(['role' => 'secretary']))
+            ->post('/registrations/upload', ['file' => $this->csv(['Juan,,Cruz,Grace Church,Digos City,04/03/2008,Yes,Y'])])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Juan']);
+    }
+
+    #[DataProvider('staffWhoSetTheDeadline')]
+    public function test_the_secretary_and_admin_set_and_remove_the_pre_registration_deadline(string $role): void
+    {
+        $this->actingAs(User::factory()->create(['role' => $role]))
+            ->put('/pre-registration-deadline', ['pre_registration_deadline' => '2026-11-21'])
+            ->assertRedirect('/attendees');
+
+        $this->assertSame('2026-11-21', YouthCamp::first()->pre_registration_deadline->toDateString());
+
+        $this->put('/pre-registration-deadline', ['pre_registration_deadline' => ''])->assertRedirect('/attendees');
+
+        $this->assertNull(YouthCamp::first()->pre_registration_deadline);
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function staffWhoSetTheDeadline(): array
+    {
+        return [
+            'secretary' => ['secretary'],
+            'admin' => ['admin'],
+        ];
+    }
+
+    public function test_a_circuit_president_cannot_change_the_pre_registration_deadline(): void
+    {
+        $this->actingAs($this->president)
+            ->put('/pre-registration-deadline', ['pre_registration_deadline' => '2030-01-01'])
+            ->assertForbidden();
+
+        $this->assertNull(YouthCamp::first()->pre_registration_deadline);
+    }
+
     public function test_a_birthday_without_leading_zeros_as_saved_by_excel_is_accepted(): void
     {
         $this->actingAs($this->president)

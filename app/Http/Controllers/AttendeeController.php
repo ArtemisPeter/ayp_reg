@@ -41,6 +41,7 @@ class AttendeeController extends Controller
         return view('attendees.index', [
             'attendees' => $attendees,
             'search' => $search,
+            'camp' => YouthCamp::where('is_current', true)->first(),
             'churches' => LocalChurch::with('circuit')->orderBy('name')->get()->sortBy('circuit.name'),
         ]);
     }

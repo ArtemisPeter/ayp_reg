@@ -14,6 +14,7 @@ use App\Http\Controllers\GateScanController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PasswordController;
+use App\Http\Controllers\PreRegistrationDeadlineController;
 use App\Http\Controllers\RegistrationUploadController;
 use App\Http\Controllers\TemplateController;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
         });
 
         Route::middleware('role:secretary,admin')->group(function () {
+            Route::put('/pre-registration-deadline', [PreRegistrationDeadlineController::class, 'update']);
             Route::post('/attendees', [AttendeeController::class, 'store']);
             Route::delete('/attendees/{attendee}', [AttendeeController::class, 'destroy']);
 

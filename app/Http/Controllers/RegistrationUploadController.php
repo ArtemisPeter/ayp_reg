@@ -25,6 +25,12 @@ class RegistrationUploadController extends Controller
 
         abort_if($isCircuitPresident && $request->user()->circuit === null, 403);
 
+        if ($isCircuitPresident && ! $camp->isPreRegistrationOpen()) {
+            return redirect('/attendees')->withErrors([
+                'file' => "Pre-registration closed on {$camp->pre_registration_deadline->format('F j, Y')}. Ask the Secretary to register anyone else on-site.",
+            ]);
+        }
+
         $errors = $rosterImport->import(
             $request->file('file'),
             $camp,

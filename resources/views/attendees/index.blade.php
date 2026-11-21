@@ -5,6 +5,8 @@
 @section('content')
     @php($canManage = in_array(auth()->user()->role, [\App\Enums\Role::Secretary, \App\Enums\Role::Admin], true))
     @php($canUpload = $canManage || auth()->user()->role === \App\Enums\Role::CircuitPresident)
+    @php($preRegistrationOpen = $camp?->isPreRegistrationOpen() ?? true)
+    @php($deadlineLabel = $camp?->pre_registration_deadline?->format('F j, Y'))
 
     @include('partials.page-head', [
         'icon' => 'bx-group',
@@ -30,6 +32,40 @@
                         @endforeach
                     </tbody>
                 </table>
+            </div>
+        </div>
+    @endif
+
+    @if ($canManage && $camp)
+        <div class="card mb-4">
+            <div class="card-header duyog-panel-head">
+                <h2><i class="bx bx-calendar-x" aria-hidden="true"></i> Pre-registration deadline</h2>
+                <span class="badge {{ $preRegistrationOpen ? 'bg-label-success' : 'bg-label-danger' }}">{{ $preRegistrationOpen ? 'Open' : 'Closed' }}</span>
+            </div>
+            <div class="card-body">
+                <p class="duyog-panel-note">
+                    @if ($deadlineLabel === null)
+                        No deadline is set, so Circuit Presidents can upload pre-registration rosters at any time.
+                    @elseif ($preRegistrationOpen)
+                        Circuit Presidents can upload until the end of {{ $deadlineLabel }}.
+                    @else
+                        Closed since the end of {{ $deadlineLabel }}. Circuit Presidents can no longer upload; set a later date to reopen it.
+                    @endif
+                </p>
+                <form method="POST" action="/pre-registration-deadline" class="row g-3 align-items-end">
+                    @csrf
+                    @method('PUT')
+                    <div class="col-sm-6 col-md-4">
+                        <label class="form-label" for="pre_registration_deadline">Last day to upload</label>
+                        <input class="form-control" id="pre_registration_deadline" name="pre_registration_deadline" type="date" value="{{ old('pre_registration_deadline', $camp->pre_registration_deadline?->format('Y-m-d')) }}">
+                    </div>
+                    <div class="col-sm-6 col-md-8 duyog-form-actions">
+                        <button class="btn btn-primary" type="submit"><i class="bx bx-check" aria-hidden="true"></i> Save deadline</button>
+                        @if ($deadlineLabel !== null)
+                            <button class="btn btn-outline-secondary" type="submit" name="pre_registration_deadline" value="">Remove deadline</button>
+                        @endif
+                    </div>
+                </form>
             </div>
         </div>
     @endif
@@ -90,17 +126,20 @@
                 <div class="card-body">
                     @if ($canManage)
                         <p class="duyog-panel-note">Upload a CSV of people registered on-site, for example after an internet outage. It can cover any Circuit. If any row has a problem, nothing is registered and you will see every problem below.</p>
+                    @elseif (! $preRegistrationOpen)
+                        <div class="alert alert-warning d-flex align-items-center gap-2" role="status"><i class="bx bx-lock-alt" aria-hidden="true"></i> Pre-registration closed on {{ $deadlineLabel }}. Uploading is turned off; ask the Secretary to register anyone else on-site.</div>
                     @else
-                        <p class="duyog-panel-note">Upload the CSV your Local Church Presidents filled in, after payment is confirmed. If any row has a problem, nothing is registered and you will see every problem below.</p>
+                        <p class="duyog-panel-note">Upload the CSV your Local Church Presidents filled in, after payment is confirmed. If any row has a problem, nothing is registered and you will see every problem below.@if ($deadlineLabel) <strong>Pre-registration closes at the end of {{ $deadlineLabel }}.</strong>@endif</p>
                     @endif
+                    @php($uploadLocked = ! $canManage && ! $preRegistrationOpen)
                     <form method="POST" action="/registrations/upload" enctype="multipart/form-data" class="row g-3">
                         @csrf
                         <div class="col-12">
                             <label class="form-label" for="file">CSV file</label>
-                            <input class="form-control" id="file" name="file" type="file" accept=".csv,text/csv" required>
+                            <input class="form-control" id="file" name="file" type="file" accept=".csv,text/csv" required @disabled($uploadLocked)>
                         </div>
                         <div class="col-12 duyog-form-actions">
-                            <button class="btn btn-primary" type="submit"><i class="bx bx-upload" aria-hidden="true"></i> Upload</button>
+                            <button class="btn btn-primary" type="submit" @disabled($uploadLocked)><i class="bx bx-upload" aria-hidden="true"></i> Upload</button>
                             <a class="btn btn-outline-secondary" href="/template.csv"><i class="bx bx-download" aria-hidden="true"></i> CSV template</a>
                         </div>
                     </form>
