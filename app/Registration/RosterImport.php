@@ -114,7 +114,7 @@ class RosterImport
                 continue;
             }
 
-            $rows[$line] = array_combine($header, array_map('trim', $values));
+            $rows[$line] = array_combine($header, array_map(fn ($value) => trim($this->toUtf8((string) $value)), $values));
         }
 
         fclose($handle);
@@ -124,6 +124,19 @@ class RosterImport
         }
 
         return ['rows' => $rows, 'problems' => $problems];
+    }
+
+    /**
+     * Excel on Windows often saves a CSV in Windows-1252, so letters like "ñ" arrive as bytes the
+     * database rejects. Values that are not valid UTF-8 are converted from Windows-1252.
+     */
+    private function toUtf8(string $value): string
+    {
+        if (mb_check_encoding($value, 'UTF-8')) {
+            return $value;
+        }
+
+        return mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
     }
 
     /**

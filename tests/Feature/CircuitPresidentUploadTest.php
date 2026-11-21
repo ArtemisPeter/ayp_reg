@@ -255,6 +255,20 @@ class CircuitPresidentUploadTest extends TestCase
         $this->get('/attendees')->assertSee('Juan');
     }
 
+    public function test_a_file_saved_by_excel_in_windows_encoding_keeps_letters_like_n_tilde(): void
+    {
+        $file = UploadedFile::fake()->createWithContent(
+            'roster.csv',
+            self::HEADER."\r\nFelsha,Paraico,Bi\xF1as,Grace Church,Digos City,08/18/2014,No,Y\r\n",
+        );
+
+        $this->actingAs($this->president)
+            ->post('/registrations/upload', ['file' => $file])
+            ->assertRedirect('/attendees');
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Felsha', 'last_name' => 'Biñas']);
+    }
+
     #[DataProvider('malformedFiles')]
     public function test_a_malformed_file_is_rejected_with_a_clear_message(string $content, string $reason): void
     {
