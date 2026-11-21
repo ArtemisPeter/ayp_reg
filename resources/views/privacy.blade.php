@@ -13,8 +13,7 @@
                 (Republic Act No. 10173).</p>
 
             <h2 class="h5 mt-4">Who is responsible</h2>
-            <p>The South Mindanao District of the Alliance Youth of the Philippines (SMD AYP), CAMACOP, runs this
-                system and is responsible for the information in it.</p>
+            <p>Neil Mark A. Luspo runs this system and is responsible for the information in it.</p>
 
             <h2 class="h5 mt-4">What we collect</h2>
             <ul>
@@ -46,7 +45,7 @@
                 <li><strong>Security</strong> sees only your first name, Local Church and Circuit when your Camp ID is scanned. So the gate still works without internet, the scanning phone keeps a copy of these three details for every Attendee during the camp.</li>
                 <li><strong>The public website</strong> shows only how many Youth each Circuit has registered, never any names.</li>
             </ul>
-            <p>We do not sell your information or share it with anyone outside SMD AYP.</p>
+            <p>We do not sell your information or share it with anyone outside the South Mindanao District of the Alliance Youth of the Philippines (SMD AYP).</p>
 
             <h2 class="h5 mt-4">How we protect it</h2>
             <p>Only staff with their own username and password can sign in, and each person sees only what their role
