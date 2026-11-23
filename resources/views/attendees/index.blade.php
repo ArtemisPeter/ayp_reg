@@ -121,10 +121,13 @@
 
             <div class="card">
                 <div class="card-header duyog-panel-head">
-                    <h2><i class="bx bx-upload" aria-hidden="true"></i> {{ $canManage ? 'Upload an on-site roster' : 'Upload a roster' }}</h2>
+                    @php($isAdmin = auth()->user()->role === \App\Enums\Role::Admin)
+                    <h2><i class="bx bx-upload" aria-hidden="true"></i> {{ $isAdmin ? 'Upload a roster' : ($canManage ? 'Upload an on-site roster' : 'Upload a roster') }}</h2>
                 </div>
                 <div class="card-body">
-                    @if ($canManage)
+                    @if ($isAdmin)
+                        <p class="duyog-panel-note">Upload a CSV for any Circuit. Each person is registered under the Circuit and Local Church named in the file. If any row has a problem, nothing is registered and you will see every problem below.</p>
+                    @elseif ($canManage)
                         <p class="duyog-panel-note">Upload a CSV of people registered on-site, for example after an internet outage. It can cover any Circuit. If any row has a problem, nothing is registered and you will see every problem below.</p>
                     @elseif (! $preRegistrationOpen)
                         <div class="alert alert-warning d-flex align-items-center gap-2" role="status"><i class="bx bx-lock-alt" aria-hidden="true"></i> Pre-registration closed on {{ $deadlineLabel }}. Uploading is turned off; ask the Secretary to register anyone else on-site.</div>
@@ -138,6 +141,19 @@
                             <label class="form-label" for="file">CSV file</label>
                             <input class="form-control" id="file" name="file" type="file" accept=".csv,text/csv" required @disabled($uploadLocked)>
                         </div>
+                        @if ($isAdmin)
+                            <fieldset class="col-12">
+                                <legend class="form-label fs-6">Register them as</legend>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="registration_type" id="registration_type_pre" value="pre_registration" @checked(old('registration_type', 'pre_registration') === 'pre_registration')>
+                                    <label class="form-check-label" for="registration_type_pre">Pre-registration</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="registration_type" id="registration_type_onsite" value="on_site" @checked(old('registration_type') === 'on_site')>
+                                    <label class="form-check-label" for="registration_type_onsite">On-site</label>
+                                </div>
+                            </fieldset>
+                        @endif
                         <div class="col-12 duyog-form-actions">
                             <button class="btn btn-primary" type="submit" @disabled($uploadLocked)><i class="bx bx-upload" aria-hidden="true"></i> Upload</button>
                             <a class="btn btn-outline-secondary" href="/template.csv"><i class="bx bx-download" aria-hidden="true"></i> CSV template</a>

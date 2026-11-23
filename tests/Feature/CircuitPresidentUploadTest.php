@@ -255,6 +255,47 @@ class CircuitPresidentUploadTest extends TestCase
         $this->get('/attendees')->assertSee('Juan');
     }
 
+    public function test_the_admin_pre_registers_people_from_any_circuit_named_in_the_file_even_after_the_deadline(): void
+    {
+        YouthCamp::first()->update(['pre_registration_deadline' => now()->subDays(3)->toDateString()]);
+        $banga = Circuit::factory()->create(['name' => 'Banga Circuit']);
+        $lamba = LocalChurch::factory()->create(['circuit_id' => $banga->id, 'name' => 'Lamba Alliance Church']);
+        $grace = LocalChurch::where('name', 'Grace Church')->first();
+
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->post('/registrations/upload', ['file' => $this->csv([
+                'Juan,,Cruz,Grace Church,Digos City,04/03/2008,Yes,Y',
+                'Kate,,Niquit,Lamba Alliance Church,Banga Circuit,11/16/2005,Yes,Y',
+            ])])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('roster_errors', []);
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Juan', 'local_church_id' => $grace->id, 'registration_type' => 'pre_registration']);
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Kate', 'local_church_id' => $lamba->id, 'registration_type' => 'pre_registration']);
+    }
+
+    public function test_the_admin_can_choose_to_register_a_file_as_on_site(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']))
+            ->post('/registrations/upload', [
+                'file' => $this->csv(['Juan,,Cruz,Grace Church,Digos City,04/03/2008,Yes,Y']),
+                'registration_type' => 'on_site',
+            ]);
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Juan', 'registration_type' => 'on_site']);
+    }
+
+    public function test_a_secretary_upload_stays_on_site_whatever_the_form_says(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'secretary']))
+            ->post('/registrations/upload', [
+                'file' => $this->csv(['Juan,,Cruz,Grace Church,Digos City,04/03/2008,Yes,Y']),
+                'registration_type' => 'pre_registration',
+            ]);
+
+        $this->assertDatabaseHas('attendees', ['first_name' => 'Juan', 'registration_type' => 'on_site']);
+    }
+
     public function test_a_file_saved_by_excel_in_windows_encoding_keeps_letters_like_n_tilde(): void
     {
         $file = UploadedFile::fake()->createWithContent(

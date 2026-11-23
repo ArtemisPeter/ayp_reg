@@ -8,12 +8,16 @@ use App\Models\YouthCamp;
 use App\Registration\RosterImport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RegistrationUploadController extends Controller
 {
     public function store(Request $request, RosterImport $rosterImport): RedirectResponse
     {
-        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:2048']]);
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'registration_type' => ['nullable', Rule::enum(RegistrationType::class)],
+        ]);
 
         $camp = YouthCamp::where('is_current', true)->first();
 
@@ -35,9 +39,22 @@ class RegistrationUploadController extends Controller
             $request->file('file'),
             $camp,
             $isCircuitPresident ? $request->user()->circuit : null,
-            $isCircuitPresident ? RegistrationType::PreRegistration : RegistrationType::OnSite,
+            $this->registrationTypeFor($request),
         );
 
         return redirect('/attendees')->with('roster_errors', $errors);
+    }
+
+    /**
+     * Circuit Presidents pre-register and the Secretary registers on-site. The Admin chooses, and
+     * pre-registers by default, with each row going to the Circuit named in the file.
+     */
+    private function registrationTypeFor(Request $request): RegistrationType
+    {
+        return match ($request->user()->role) {
+            Role::CircuitPresident => RegistrationType::PreRegistration,
+            Role::Admin => $request->enum('registration_type', RegistrationType::class) ?? RegistrationType::PreRegistration,
+            default => RegistrationType::OnSite,
+        };
     }
 }
