@@ -36,8 +36,11 @@ Route::middleware(['auth', 'auth.session'])->group(function () {
     Route::middleware('password.changed')->group(function () {
         Route::get('/dashboard', DashboardController::class);
 
-        Route::get('/attendees', [AttendeeController::class, 'index'])
-            ->middleware('role:circuit_president,secretary,admin');
+        Route::middleware('role:circuit_president,secretary,admin')->group(function () {
+            Route::get('/attendees', [AttendeeController::class, 'index']);
+            Route::get('/attendees/export/csv', [AttendeeController::class, 'exportCsv']);
+            Route::get('/attendees/export/pdf', [AttendeeController::class, 'exportPdf']);
+        });
 
         Route::post('/registrations/upload', [RegistrationUploadController::class, 'store'])
             ->middleware('role:circuit_president,secretary,admin');

@@ -165,31 +165,91 @@
     @endif
 
     <div class="card">
+        @php($exportQuery = request()->getQueryString() ? '?'.request()->getQueryString() : '')
         <div class="card-header duyog-panel-head">
             <h2><i class="bx bx-list-ul" aria-hidden="true"></i> Roster</h2>
-        </div>
-        <form method="GET" action="/attendees" class="duyog-toolbar" role="search" id="roster_search_form">
-            <div class="duyog-search">
-                <i class="bx bx-search" aria-hidden="true"></i>
-                <input class="form-control" id="roster_search" name="search" type="search" value="{{ $search }}" placeholder="Search name, church, Circuit, birthday, Yes/No, Youth/Pastor, Pre-Reg/On-Site" aria-label="Search attendees" aria-controls="roster_results" autocomplete="off">
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-primary" id="roster_export_csv" data-base="/attendees/export/csv" href="/attendees/export/csv{{ $exportQuery }}"><i class="bx bx-spreadsheet" aria-hidden="true"></i> Export CSV</a>
+                <a class="btn btn-sm btn-outline-primary" id="roster_export_pdf" data-base="/attendees/export/pdf" href="/attendees/export/pdf{{ $exportQuery }}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf" aria-hidden="true"></i> Export PDF</a>
             </div>
-            <button class="btn btn-outline-primary" type="submit">Search</button>
-            <a class="btn btn-outline-secondary" id="roster_search_clear" href="/attendees" @if ($search === '') hidden @endif>Clear</a>
-            <span class="duyog-panel-meta" id="roster_meta" aria-live="polite">
-                @if ($attendees->total() === 0)
-                    {{ $search === '' ? 'No attendees yet' : 'No attendees match' }}
-                @else
-                    Showing {{ $attendees->firstItem() }}&#8211;{{ $attendees->lastItem() }} of {{ number_format($attendees->total()) }}
+        </div>
+        <form method="GET" action="/attendees" role="search" id="roster_search_form">
+            <div class="duyog-toolbar">
+                <div class="duyog-search">
+                    <i class="bx bx-search" aria-hidden="true"></i>
+                    <input class="form-control" id="roster_search" name="search" type="search" value="{{ $search }}" placeholder="Search name, church, Circuit, birthday, Yes/No, Youth/Pastor, Pre-Reg/On-Site" aria-label="Search attendees" aria-controls="roster_results" autocomplete="off">
+                </div>
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+                <a class="btn btn-outline-secondary" id="roster_search_clear" href="/attendees" @unless ($hasFilters) hidden @endunless>Clear all</a>
+                <span class="duyog-panel-meta" id="roster_meta" aria-live="polite">
+                    @if ($attendees->total() === 0)
+                        {{ $hasFilters ? 'No attendees match' : 'No attendees yet' }}
+                    @else
+                        Showing {{ $attendees->firstItem() }}&#8211;{{ $attendees->lastItem() }} of {{ number_format($attendees->total()) }}
+                    @endif
+                </span>
+            </div>
+            <div class="row g-2 px-4 pb-3 roster-filters">
+                @if ($filterCircuits->count() > 1)
+                    <div class="col-6 col-md-4 col-xl-2">
+                        <label class="form-label small mb-1" for="filter_circuit">Circuit</label>
+                        <select class="form-select form-select-sm" id="filter_circuit" name="circuit">
+                            <option value="">All Circuits</option>
+                            @foreach ($filterCircuits as $circuit)
+                                <option value="{{ $circuit->id }}" @selected($filters['circuit'] === $circuit->id)>{{ $circuit->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 @endif
-            </span>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <label class="form-label small mb-1" for="filter_church">Local Church</label>
+                    <select class="form-select form-select-sm" id="filter_church" name="church">
+                        <option value="">All churches</option>
+                        @foreach ($filterChurches as $church)
+                            <option value="{{ $church->id }}" data-circuit="{{ $church->circuit_id }}" @selected($filters['church'] === $church->id)>{{ $church->name }}@if ($filterCircuits->count() > 1) ({{ $church->circuit->name }})@endif</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <label class="form-label small mb-1" for="filter_baptismal">Baptismal</label>
+                    <select class="form-select form-select-sm" id="filter_baptismal" name="baptismal">
+                        <option value="">Any</option>
+                        <option value="yes" @selected($filters['baptismal'] === 'yes')>Yes</option>
+                        <option value="no" @selected($filters['baptismal'] === 'no')>No</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <label class="form-label small mb-1" for="filter_type">Type</label>
+                    <select class="form-select form-select-sm" id="filter_type" name="type">
+                        <option value="">Any</option>
+                        <option value="youth" @selected($filters['type'] === 'youth')>Youth</option>
+                        <option value="pastor" @selected($filters['type'] === 'pastor')>Pastor</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <label class="form-label small mb-1" for="filter_registration">Registration</label>
+                    <select class="form-select form-select-sm" id="filter_registration" name="registration">
+                        <option value="">Any</option>
+                        <option value="pre_registration" @selected($filters['registration'] === 'pre_registration')>Pre-Registration</option>
+                        <option value="on_site" @selected($filters['registration'] === 'on_site')>On-Site</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-4 col-xl-2">
+                    <span class="form-label small mb-1 d-block" id="filter_born_label">Born between</span>
+                    <div class="d-flex gap-1" role="group" aria-labelledby="filter_born_label">
+                        <input class="form-control form-control-sm" type="date" name="born_from" value="{{ $filters['born_from'] }}" aria-label="Born on or after">
+                        <input class="form-control form-control-sm" type="date" name="born_to" value="{{ $filters['born_to'] }}" aria-label="Born on or before">
+                    </div>
+                </div>
+            </div>
         </form>
 
         <div id="roster_results">
         @if ($attendees->total() === 0)
             <div class="duyog-empty">
-                <i class="bx {{ $search === '' ? 'bx-group' : 'bx-search-alt' }}" aria-hidden="true"></i>
-                <strong>{{ $search === '' ? 'Nobody is registered yet' : 'No one matches that search' }}</strong>
-                <span>{{ $search === '' ? 'Attendees appear here once a roster is uploaded.' : 'Check the spelling, or clear the search to see everyone. Every word must match.' }}</span>
+                <i class="bx {{ $hasFilters ? 'bx-search-alt' : 'bx-group' }}" aria-hidden="true"></i>
+                <strong>{{ $hasFilters ? 'No one matches that search and filters' : 'Nobody is registered yet' }}</strong>
+                <span>{{ $hasFilters ? 'Check the spelling, loosen a filter, or Clear all to see everyone. Every word must match.' : 'Attendees appear here once a roster is uploaded.' }}</span>
             </div>
         @else
             <div class="table-responsive">
@@ -250,14 +310,37 @@
             const clear = document.getElementById('roster_search_clear');
             const meta = document.getElementById('roster_meta');
             const results = document.getElementById('roster_results');
+            const circuit = document.getElementById('filter_circuit');
+            const church = document.getElementById('filter_church');
+            const exports = [document.getElementById('roster_export_csv'), document.getElementById('roster_export_pdf')];
             let timer = null;
             let pending = null;
 
-            const load = async (search) => {
-                const url = new URL(form.action, window.location.origin);
-                if (search !== '') {
-                    url.searchParams.set('search', search);
+            // With a Circuit chosen, the church list shows only that Circuit's churches.
+            const limitChurches = () => {
+                if (! circuit) {
+                    return;
                 }
+                for (const option of church.options) {
+                    option.hidden = option.value !== '' && circuit.value !== '' && option.dataset.circuit !== circuit.value;
+                }
+                if (church.selectedOptions[0]?.hidden) {
+                    church.value = '';
+                }
+            };
+
+            const currentUrl = () => {
+                const url = new URL(form.action, window.location.origin);
+                for (const [name, value] of new FormData(form)) {
+                    if (String(value).trim() !== '') {
+                        url.searchParams.set(name, String(value).trim());
+                    }
+                }
+                return url;
+            };
+
+            const load = async () => {
+                const url = currentUrl();
 
                 pending?.abort();
                 pending = new AbortController();
@@ -272,7 +355,8 @@
                     const page = new DOMParser().parseFromString(await response.text(), 'text/html');
                     results.innerHTML = page.getElementById('roster_results').innerHTML;
                     meta.textContent = page.getElementById('roster_meta').textContent.trim();
-                    clear.hidden = search === '';
+                    clear.hidden = url.search === '';
+                    exports.forEach((link) => link.href = link.dataset.base + url.search);
                     history.replaceState(null, '', url);
                 } catch (error) {
                     if (error.name !== 'AbortError') {
@@ -285,21 +369,33 @@
 
             input.addEventListener('input', () => {
                 clearTimeout(timer);
-                timer = setTimeout(() => load(input.value.trim()), 300);
+                timer = setTimeout(load, 300);
             });
+
+            form.querySelectorAll('select, input[type="date"]').forEach((field) => field.addEventListener('change', () => {
+                if (field === circuit) {
+                    limitChurches();
+                }
+                clearTimeout(timer);
+                load();
+            }));
 
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
                 clearTimeout(timer);
-                load(input.value.trim());
+                load();
             });
 
             clear.addEventListener('click', (event) => {
                 event.preventDefault();
-                input.value = '';
-                load('');
+                form.reset();
+                form.querySelectorAll('input, select').forEach((field) => field.value = '');
+                limitChurches();
+                load();
                 input.focus();
             });
+
+            limitChurches();
         })();
     </script>
 @endsection
