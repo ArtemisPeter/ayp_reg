@@ -168,7 +168,7 @@
         @php($exportQuery = request()->getQueryString() ? '?'.request()->getQueryString() : '')
         <div class="card-header duyog-panel-head">
             <h2><i class="bx bx-list-ul" aria-hidden="true"></i> Roster</h2>
-            <div class="d-flex flex-wrap gap-2">
+            <div class="duyog-panel-actions">
                 <a class="btn btn-sm btn-outline-primary" id="roster_export_csv" data-base="/attendees/export/csv" href="/attendees/export/csv{{ $exportQuery }}"><i class="bx bx-spreadsheet" aria-hidden="true"></i> Export CSV</a>
                 <a class="btn btn-sm btn-outline-primary" id="roster_export_pdf" data-base="/attendees/export/pdf" href="/attendees/export/pdf{{ $exportQuery }}" target="_blank" rel="noopener"><i class="bx bxs-file-pdf" aria-hidden="true"></i> Export PDF</a>
             </div>
@@ -177,7 +177,7 @@
             <div class="duyog-toolbar">
                 <div class="duyog-search">
                     <i class="bx bx-search" aria-hidden="true"></i>
-                    <input class="form-control" id="roster_search" name="search" type="search" value="{{ $search }}" placeholder="Search name, church, Circuit, birthday, Yes/No, Youth/Pastor, Pre-Reg/On-Site" aria-label="Search attendees" aria-controls="roster_results" autocomplete="off">
+                    <input class="form-control" id="roster_search" name="search" type="search" value="{{ $search }}" placeholder="Search names, churches, birthdays…" title="Matches any column: name, church, Circuit, birthday, Yes/No, Youth/Pastor, Pre-Reg/On-Site" aria-label="Search attendees by any column" aria-controls="roster_results" autocomplete="off">
                 </div>
                 <button class="btn btn-outline-primary" type="submit">Search</button>
                 <a class="btn btn-outline-secondary" id="roster_search_clear" href="/attendees" @unless ($hasFilters) hidden @endunless>Clear all</a>
@@ -189,10 +189,10 @@
                     @endif
                 </span>
             </div>
-            <div class="row g-2 px-4 pb-3 roster-filters">
+            <div class="duyog-roster-filters" role="group" aria-label="Filter the roster">
                 @if ($filterCircuits->count() > 1)
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <label class="form-label small mb-1" for="filter_circuit">Circuit</label>
+                    <div>
+                        <label for="filter_circuit">Circuit</label>
                         <select class="form-select form-select-sm" id="filter_circuit" name="circuit">
                             <option value="">All Circuits</option>
                             @foreach ($filterCircuits as $circuit)
@@ -201,8 +201,8 @@
                         </select>
                     </div>
                 @endif
-                <div class="col-6 col-md-4 col-xl-2">
-                    <label class="form-label small mb-1" for="filter_church">Local Church</label>
+                <div>
+                    <label for="filter_church">Local Church</label>
                     <select class="form-select form-select-sm" id="filter_church" name="church">
                         <option value="">All churches</option>
                         @foreach ($filterChurches as $church)
@@ -210,36 +210,29 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-6 col-md-4 col-xl-2">
-                    <label class="form-label small mb-1" for="filter_baptismal">Baptismal</label>
+                <div>
+                    <label for="filter_baptismal">Baptismal</label>
                     <select class="form-select form-select-sm" id="filter_baptismal" name="baptismal">
                         <option value="">Any</option>
                         <option value="yes" @selected($filters['baptismal'] === 'yes')>Yes</option>
                         <option value="no" @selected($filters['baptismal'] === 'no')>No</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-4 col-xl-2">
-                    <label class="form-label small mb-1" for="filter_type">Type</label>
+                <div>
+                    <label for="filter_type">Type</label>
                     <select class="form-select form-select-sm" id="filter_type" name="type">
                         <option value="">Any</option>
                         <option value="youth" @selected($filters['type'] === 'youth')>Youth</option>
                         <option value="pastor" @selected($filters['type'] === 'pastor')>Pastor</option>
                     </select>
                 </div>
-                <div class="col-6 col-md-4 col-xl-2">
-                    <label class="form-label small mb-1" for="filter_registration">Registration</label>
+                <div>
+                    <label for="filter_registration">Registration</label>
                     <select class="form-select form-select-sm" id="filter_registration" name="registration">
                         <option value="">Any</option>
                         <option value="pre_registration" @selected($filters['registration'] === 'pre_registration')>Pre-Registration</option>
                         <option value="on_site" @selected($filters['registration'] === 'on_site')>On-Site</option>
                     </select>
-                </div>
-                <div class="col-6 col-md-4 col-xl-2">
-                    <span class="form-label small mb-1 d-block" id="filter_born_label">Born between</span>
-                    <div class="d-flex gap-1" role="group" aria-labelledby="filter_born_label">
-                        <input class="form-control form-control-sm" type="date" name="born_from" value="{{ $filters['born_from'] }}" aria-label="Born on or after">
-                        <input class="form-control form-control-sm" type="date" name="born_to" value="{{ $filters['born_to'] }}" aria-label="Born on or before">
-                    </div>
                 </div>
             </div>
         </form>
@@ -273,7 +266,7 @@
                                 <td class="text-nowrap">{{ $attendee->birthday->format('Y-m-d') }}</td>
                                 <td><span class="badge {{ $attendee->is_baptized ? 'bg-label-success' : 'bg-label-secondary' }}">{{ $attendee->is_baptized ? 'Yes' : 'No' }}</span></td>
                                 <td><span class="badge {{ $attendee->type->value === 'pastor' ? 'bg-label-warning' : 'bg-label-primary' }}">{{ ucfirst($attendee->type->value) }}</span></td>
-                                <td class="text-nowrap">{{ str($attendee->registration_type->value)->replace('_', ' ')->title() }}</td>
+                                <td class="text-nowrap">{{ $attendee->registration_type === \App\Enums\RegistrationType::PreRegistration ? 'Pre-Registration' : 'On-Site' }}</td>
                                 @if ($canManage)
                                     <td class="text-nowrap text-end">
                                         <form method="POST" action="/attendees/{{ $attendee->id }}" class="duyog-row-actions" onsubmit="return confirm('Remove this attendee? Their Camp ID will stop working.')">
@@ -372,7 +365,7 @@
                 timer = setTimeout(load, 300);
             });
 
-            form.querySelectorAll('select, input[type="date"]').forEach((field) => field.addEventListener('change', () => {
+            form.querySelectorAll('select').forEach((field) => field.addEventListener('change', () => {
                 if (field === circuit) {
                     limitChurches();
                 }

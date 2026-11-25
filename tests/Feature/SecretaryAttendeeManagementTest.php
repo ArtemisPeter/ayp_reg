@@ -54,7 +54,7 @@ class SecretaryAttendeeManagementTest extends TestCase
 
         $this->get('/attendees')
             ->assertSee('Cruz')
-            ->assertSee('On Site');
+            ->assertSee('On-Site');
     }
 
     public function test_the_on_site_form_keeps_the_chosen_circuit_and_church_after_a_validation_error(): void

@@ -62,7 +62,6 @@ class RosterFilterAndExportTest extends TestCase
         $this->get('/attendees?baptismal=no')->assertSee('Cambronero')->assertDontSee('Niquit')->assertDontSee('Reyes');
         $this->get('/attendees?type=pastor')->assertSee('Reyes')->assertDontSee('Niquit');
         $this->get('/attendees?registration=on_site')->assertSee('Cambronero')->assertDontSee('Niquit');
-        $this->get('/attendees?born_from=2000-01-01&born_to=2010-12-31')->assertSee('Niquit')->assertDontSee('Cambronero')->assertDontSee('Reyes');
         $this->get("/attendees?circuit={$this->banga->id}&baptismal=yes")->assertSee('Niquit')->assertDontSee('Cambronero')->assertDontSee('Reyes');
     }
 

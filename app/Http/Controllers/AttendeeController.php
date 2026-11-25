@@ -91,12 +91,11 @@ class AttendeeController extends Controller
     /**
      * The roster filters from the query string, with anything unrecognised dropped.
      *
-     * @return array{search: string, circuit: ?int, church: ?int, baptismal: ?string, type: ?string, registration: ?string, born_from: ?string, born_to: ?string}
+     * @return array{search: string, circuit: ?int, church: ?int, baptismal: ?string, type: ?string, registration: ?string}
      */
     private function rosterFilters(Request $request): array
     {
         $choice = fn (string $key, array $allowed): ?string => in_array($request->query($key), $allowed, true) ? $request->query($key) : null;
-        $date = fn (string $key): ?string => preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $request->query($key)) === 1 ? $request->query($key) : null;
         $id = fn (string $key): ?int => ctype_digit((string) $request->query($key)) ? (int) $request->query($key) : null;
 
         return [
@@ -106,8 +105,6 @@ class AttendeeController extends Controller
             'baptismal' => $choice('baptismal', ['yes', 'no']),
             'type' => $choice('type', array_column(AttendeeType::cases(), 'value')),
             'registration' => $choice('registration', array_column(RegistrationType::cases(), 'value')),
-            'born_from' => $date('born_from'),
-            'born_to' => $date('born_to'),
         ];
     }
 
@@ -142,8 +139,6 @@ class AttendeeController extends Controller
             ->when($filters['baptismal'], fn ($query, string $value) => $query->where('is_baptized', $value === 'yes'))
             ->when($filters['type'], fn ($query, string $value) => $query->where('type', $value))
             ->when($filters['registration'], fn ($query, string $value) => $query->where('registration_type', $value))
-            ->when($filters['born_from'], fn ($query, string $date) => $query->whereDate('birthday', '>=', $date))
-            ->when($filters['born_to'], fn ($query, string $date) => $query->whereDate('birthday', '<=', $date))
             ->orderBy('last_name')
             ->orderBy('first_name');
     }
@@ -162,8 +157,6 @@ class AttendeeController extends Controller
             $filters['baptismal'] ? 'Baptismal: '.ucfirst($filters['baptismal']) : null,
             $filters['type'] ? 'Type: '.ucfirst($filters['type']) : null,
             $filters['registration'] ? 'Registration: '.($filters['registration'] === 'pre_registration' ? 'Pre-Registration' : 'On-Site') : null,
-            $filters['born_from'] ? 'Born from: '.$filters['born_from'] : null,
-            $filters['born_to'] ? 'Born to: '.$filters['born_to'] : null,
             $filters['search'] !== '' ? "Search: \"{$filters['search']}\"" : null,
         ]));
     }
